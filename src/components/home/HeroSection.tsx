@@ -1,75 +1,81 @@
-import { useState, useEffect, lazy, Suspense } from "react";
+import { useState, useEffect, useRef, useMemo, lazy, Suspense } from "react";
 import { Link } from "wouter";
 import { m, AnimatePresence, useSpring, useTransform } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useSiteContent } from "@/providers/SiteContentProvider";
 import { heroImageUrl } from "@/utils/cloudinaryImage";
+import { useAnimationCapability } from "@/providers/AnimationProvider";
+import { useInViewport } from "@/hooks/useInViewport";
 
 const HeroCanvas = lazy(() => import("@/components/HeroCanvas"));
 
 export default function HeroSection() {
   const { getSlotImage } = useSiteContent();
+  const { allowWebGL, allowMotion } = useAnimationCapability();
   const [currentLandingSlide, setCurrentLandingSlide] = useState(0);
-  const [mouseX, setMouseX] = useState(0);
-  const [mouseY, setMouseY] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
-  // Gate the decorative WebGL layer: its ~235KB (gzip) three-vendor chunk must not download
-  // until the browser is idle (after LCP/hydration), and never for reduced-motion visitors.
-  const [mount3D, setMount3D] = useState(false);
 
+  // Pointer parallax lives entirely outside React: the listener writes a MotionValue (for the CSS
+  // parallax on the heading) and a plain ref (for the WebGL light). Neither triggers a re-render —
+  // this replaces the old mouseX/mouseY state that re-rendered the whole hero on every mouse event.
+  const pointerRef = useRef({ x: 0, y: 0 });
+
+  // The WebGL layer mounts ONLY when the global engine says the device is capable AND the hero is
+  // actually on screen. Scrolling past it unmounts the canvas → zero RAF / zero GPU. `allowWebGL`
+  // already folds in idle-ready, tab-visibility, reduced-motion, Data-Saver, memory/cores/connection.
+  const { ref: heroRef, inView: heroInView } = useInViewport<HTMLElement>({ rootMargin: "200px" });
+  const mount3D = allowWebGL && heroInView;
+
+  // Memoized: rebuilt only when CMS content changes, not on every render (was re-running 5×
+  // getSlotImage + 5× heroImageUrl on each interval tick / resize / pointer move).
+  const landingSlides = useMemo(
+    () => [
+      {
+        image: heroImageUrl(getSlotImage("hero", "hero_main", "/images/hero-mandap.webp", "Alankaran Royal Mandap").url),
+        title: "ALANKARAN",
+        subtitle: "Hyderabad's Premier Luxury Wedding Planners & Designers",
+        tagline: "✦ BESPOKE NIZAMI ROYALTY & MODERN ROMANCE ✦"
+      },
+      {
+        image: heroImageUrl(getSlotImage("hero", "hero_secondary", "/images/gallery-royal-1.webp", "Elevated Artistry").url),
+        title: "ELEVATED ARTISTRY",
+        subtitle: "Immersive Architectural Decor & Floral Styling",
+        tagline: "✦ COMPOSING ETERNAL MEMORIES ✦"
+      },
+      {
+        image: heroImageUrl(getSlotImage("hero", "hero_slide_3", "/images/cinematic_floral_wedding.webp", "Grand Celebrations").url),
+        title: "GRAND CELEBRATIONS",
+        subtitle: "Flawless Execution Rooted in Splendor and Grace",
+        tagline: "✦ ESTABLISHED 2011 — HYDERABAD ✦"
+      },
+      {
+        image: heroImageUrl(getSlotImage("hero", "hero_slide_4", "/images/mughal_garden.webp", "Mughal Garden Luxury").url),
+        title: "MUGHAL GARDEN LUXURY",
+        subtitle: "Symmetry, Blooms & Sacred Temple Floristry",
+        tagline: "✦ EVERY DETAIL CREATED WITH DELIBERATE INTENT ✦"
+      },
+      {
+        image: heroImageUrl(getSlotImage("hero", "hero_slide_5", "/images/hero-couple.webp", "Royal Couple Portrait").url),
+        title: "ROYAL LUXURY",
+        subtitle: "Nizami Splendor & Modern Romance",
+        tagline: "✦ AN ANTHOLOGY OF LOVE STORIES ✦"
+      }
+    ],
+    [getSlotImage]
+  );
+
+  const slideCount = landingSlides.length;
+
+  // Stable interval: depends only on the (fixed) slide count and pauses while the hero is off screen
+  // or the tab is hidden — no more tearing down/recreating the timer on every slide, and no wasted
+  // crossfades animating a hero nobody is looking at. Functional update avoids a currentSlide dep.
   useEffect(() => {
-    if (typeof window === "undefined") return;
-    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
-    const schedule =
-      typeof requestIdleCallback !== "undefined"
-        ? (cb: () => void) => requestIdleCallback(cb, { timeout: 2500 })
-        : (cb: () => void) => window.setTimeout(cb, 1200);
-    const id = schedule(() => setMount3D(true));
-    return () => {
-      if (typeof requestIdleCallback !== "undefined") cancelIdleCallback(id as number);
-      else clearTimeout(id as number);
-    };
-  }, []);
-
-  const landingSlides = [
-    {
-      image: heroImageUrl(getSlotImage("hero", "hero_main", "/images/hero-mandap.webp", "Alankaran Royal Mandap").url),
-      title: "ALANKARAN",
-      subtitle: "Hyderabad's Premier Luxury Wedding Planners & Designers",
-      tagline: "✦ BESPOKE NIZAMI ROYALTY & MODERN ROMANCE ✦"
-    },
-    {
-      image: heroImageUrl(getSlotImage("hero", "hero_secondary", "/images/gallery-royal-1.webp", "Elevated Artistry").url),
-      title: "ELEVATED ARTISTRY",
-      subtitle: "Immersive Architectural Decor & Floral Styling",
-      tagline: "✦ COMPOSING ETERNAL MEMORIES ✦"
-    },
-    {
-      image: heroImageUrl(getSlotImage("hero", "hero_slide_3", "/images/cinematic_floral_wedding.webp", "Grand Celebrations").url),
-      title: "GRAND CELEBRATIONS",
-      subtitle: "Flawless Execution Rooted in Splendor and Grace",
-      tagline: "✦ ESTABLISHED 2011 — HYDERABAD ✦"
-    },
-    {
-      image: heroImageUrl(getSlotImage("hero", "hero_slide_4", "/images/mughal_garden.webp", "Mughal Garden Luxury").url),
-      title: "MUGHAL GARDEN LUXURY",
-      subtitle: "Symmetry, Blooms & Sacred Temple Floristry",
-      tagline: "✦ EVERY DETAIL CREATED WITH DELIBERATE INTENT ✦"
-    },
-    {
-      image: heroImageUrl(getSlotImage("hero", "hero_slide_5", "/images/hero-couple.webp", "Royal Couple Portrait").url),
-      title: "ROYAL LUXURY",
-      subtitle: "Nizami Splendor & Modern Romance",
-      tagline: "✦ AN ANTHOLOGY OF LOVE STORIES ✦"
-    }
-  ];
-
-  useEffect(() => {
+    if (!heroInView) return;
     const timer = setInterval(() => {
-      setCurrentLandingSlide((prev) => (prev + 1) % landingSlides.length);
+      setCurrentLandingSlide((prev) => (prev + 1) % slideCount);
     }, 4500);
     return () => clearInterval(timer);
-  }, [currentLandingSlide, landingSlides.length]);
+  }, [slideCount, heroInView]);
 
   const nextLandingSlide = () => {
     setCurrentLandingSlide((prev) => (prev + 1) % landingSlides.length);
@@ -87,27 +93,30 @@ export default function HeroSection() {
   useEffect(() => {
     setIsMobile(window.innerWidth < 768);
     const onResize = () => setIsMobile(window.innerWidth < 768);
-    window.addEventListener("resize", onResize);
+    window.addEventListener("resize", onResize, { passive: true });
     return () => window.removeEventListener("resize", onResize);
   }, []);
 
+  // Pointer parallax only when premium motion is enabled (skips reduced-motion / low-end / Data-Saver).
+  // Writes a MotionValue + a ref, never React state — so it costs one style update, not a re-render.
   useEffect(() => {
+    if (!allowMotion) return;
     const onMouse = (e: MouseEvent) => {
       const x = (e.clientX / window.innerWidth) * 2 - 1;
       const y = (e.clientY / window.innerHeight) * 2 - 1;
-      setMouseX(x);
-      setMouseY(y);
+      pointerRef.current.x = x;
+      pointerRef.current.y = y;
       springX.set(x);
       springY.set(y);
     };
-    window.addEventListener("mousemove", onMouse);
+    window.addEventListener("mousemove", onMouse, { passive: true });
     return () => window.removeEventListener("mousemove", onMouse);
-  }, [springX, springY]);
+  }, [allowMotion, springX, springY]);
 
   return (
     <>
       {/* ─── PREMIUM FULL-SCREEN HERO LANDING SLIDER ─── */}
-      <section className="relative h-screen w-full overflow-hidden bg-black select-none">
+      <section ref={heroRef} className="relative h-screen w-full overflow-hidden bg-black select-none">
         {/* Background Auto-changing Slides */}
         <div className="absolute inset-0 z-0">
           <AnimatePresence initial={false}>
@@ -135,7 +144,7 @@ export default function HeroSection() {
           </AnimatePresence>
           {mount3D && (
             <Suspense fallback={null}>
-              <HeroCanvas mouseX={mouseX} mouseY={mouseY} isMobile={isMobile} />
+              <HeroCanvas pointer={pointerRef} isMobile={isMobile} />
             </Suspense>
           )}
         </div>
@@ -266,15 +275,8 @@ export default function HeroSection() {
             <div className="w-[18px] h-8 rounded-full border border-white/20 flex justify-center p-1 bg-black/10 backdrop-blur-[2px] group-hover:border-gold/40 transition-colors">
               <m.div
                 className="w-1.5 h-1.5 rounded-full bg-gold"
-                animate={{
-                  y: [0, 12, 0],
-                  opacity: [1, 0.4, 1]
-                }}
-                transition={{
-                  repeat: Infinity,
-                  duration: 2.2,
-                  ease: "easeInOut"
-                }}
+                animate={allowMotion ? { y: [0, 12, 0], opacity: [1, 0.4, 1] } : { y: 0, opacity: 1 }}
+                transition={allowMotion ? { repeat: Infinity, duration: 2.2, ease: "easeInOut" } : { duration: 0 }}
               />
             </div>
           </m.div>

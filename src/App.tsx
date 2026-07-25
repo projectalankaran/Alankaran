@@ -11,6 +11,7 @@ import PageTransition from "@/components/PageTransition";
 import FloatingCTA from "@/components/FloatingCTA";
 import { AuthProvider } from "@/context/AuthContext";
 import { SiteContentProvider } from "@/providers/SiteContentProvider";
+import { AnimationProvider } from "@/providers/AnimationProvider";
 import { SiteErrorBoundary } from "@/components/common/SiteErrorBoundary";
 
 function ScrollToTop() {
@@ -143,18 +144,20 @@ function App({ helmetContext, isServer = false }: { helmetContext?: any, isServe
 
   return (
     <HelmetProvider context={helmetContext}>
-      <BookingProvider>
-        <LazyMotion features={domAnimation} strict>
-          {isServer ? (
-            <MainContent showWhatsApp={showWhatsApp} />
-          ) : (
-            <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+      <AnimationProvider>
+        <BookingProvider>
+          <LazyMotion features={domAnimation} strict>
+            {isServer ? (
               <MainContent showWhatsApp={showWhatsApp} />
-            </WouterRouter>
-          )}
-        </LazyMotion>
-        <Toaster />
-      </BookingProvider>
+            ) : (
+              <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+                <MainContent showWhatsApp={showWhatsApp} />
+              </WouterRouter>
+            )}
+          </LazyMotion>
+          <Toaster />
+        </BookingProvider>
+      </AnimationProvider>
     </HelmetProvider>
   );
 }

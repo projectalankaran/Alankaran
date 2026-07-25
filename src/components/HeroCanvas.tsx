@@ -4,6 +4,9 @@ import { Sphere, Float } from "@react-three/drei";
 import * as THREE from "three";
 import { isWebGLAvailable } from "@/lib/webgl";
 
+/** Zero-React pointer channel: the hero writes into `.current`, the frame loop reads it. */
+export type PointerRef = React.MutableRefObject<{ x: number; y: number }>;
+
 function FallingPetal({ 
   position, 
   scale, 
@@ -112,19 +115,20 @@ function GoldDust({ isMobile }: { isMobile: boolean }) {
   );
 }
 
-function MouseLight({ mouseX, mouseY }: { mouseX: number; mouseY: number }) {
+function MouseLight({ pointer }: { pointer: PointerRef }) {
   const lightRef = useRef<THREE.PointLight>(null);
   useFrame(() => {
     if (!lightRef.current) return;
-    lightRef.current.position.x += (mouseX * 8 - lightRef.current.position.x) * 0.05;
-    lightRef.current.position.y += (-mouseY * 6 - lightRef.current.position.y) * 0.05;
+    const { x, y } = pointer.current;
+    lightRef.current.position.x += (x * 8 - lightRef.current.position.x) * 0.05;
+    lightRef.current.position.y += (-y * 6 - lightRef.current.position.y) * 0.05;
   });
   return (
     <pointLight ref={lightRef} color="#f5e0c0" intensity={5} distance={20} />
   );
 }
 
-function Scene({ mouseX, mouseY, isMobile }: { mouseX: number; mouseY: number; isMobile: boolean }) {
+function Scene({ pointer, isMobile }: { pointer: PointerRef; isMobile: boolean }) {
   const petals = useMemo(() => {
     const count = isMobile ? 12 : 30;
     return Array.from({ length: count }).map((_, i) => ({
@@ -143,7 +147,7 @@ function Scene({ mouseX, mouseY, isMobile }: { mouseX: number; mouseY: number; i
     <>
       <ambientLight intensity={0.5} color="#f5e6d8" />
       <directionalLight position={[10, 10, 5]} intensity={1} color="#fdf0e0" />
-      <MouseLight mouseX={mouseX} mouseY={mouseY} />
+      <MouseLight pointer={pointer} />
       
       <group>
         {petals.map((p, i) => (
@@ -160,35 +164,25 @@ function Scene({ mouseX, mouseY, isMobile }: { mouseX: number; mouseY: number; i
 }
 
 interface HeroCanvasProps {
-  mouseX: number;
-  mouseY: number;
+  pointer: PointerRef;
   isMobile?: boolean;
 }
 
-export default function HeroCanvas({ mouseX, mouseY, isMobile = false }: HeroCanvasProps) {
+/**
+ * The WebGL layer. Lifecycle (mount/unmount by capability + on-screen + tab-visible) is owned by the
+ * caller (HeroSection) via the global animation capability, so this component's mere existence already
+ * implies "we should render." The only gate kept here is the final WebGL-context availability check —
+ * a device-level fact the capability heuristic can't know. When unmounted, the r3f render loop is torn
+ * down entirely: zero RAF, zero GPU while offscreen or hidden.
+ */
+export default function HeroCanvas({ pointer, isMobile = false }: HeroCanvasProps) {
   const [webglOk, setWebglOk] = useState<boolean | null>(null);
-  // Defer 3D init until browser is idle → reduces TBT dramatically
-  const [canMount, setCanMount] = useState(false);
 
   useEffect(() => {
     setWebglOk(isWebGLAvailable());
   }, []);
 
-  useEffect(() => {
-    // requestIdleCallback fires when the main thread has finished its urgent work
-    // (React hydration, LCP image decode, first paint). Falls back to 200ms timeout.
-    const schedule =
-      typeof requestIdleCallback !== "undefined"
-        ? (cb: () => void) => requestIdleCallback(cb, { timeout: 1500 })
-        : (cb: () => void) => setTimeout(cb, 200);
-    const id = schedule(() => setCanMount(true));
-    return () => {
-      if (typeof requestIdleCallback !== "undefined") cancelIdleCallback(id as number);
-      else clearTimeout(id as number);
-    };
-  }, []);
-
-  if (webglOk === null || !webglOk || !canMount) return null;
+  if (webglOk === null || !webglOk) return null;
 
   return (
     <Suspense fallback={null}>
@@ -199,7 +193,7 @@ export default function HeroCanvas({ mouseX, mouseY, isMobile = false }: HeroCan
         dpr={isMobile ? 1 : [1, 1.5]}
         performance={{ min: 0.5 }}
       >
-        <Scene mouseX={mouseX} mouseY={mouseY} isMobile={isMobile} />
+        <Scene pointer={pointer} isMobile={isMobile} />
       </Canvas>
     </Suspense>
   );

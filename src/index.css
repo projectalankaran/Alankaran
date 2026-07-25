@@ -722,4 +722,41 @@
     transition-duration: 0.001ms !important;
     scroll-behavior: auto !important;
   }
+}
+
+/*
+  Progressive Animation Engine — CSS side (driven by <html data-motion> / <html data-tier>, set once
+  by AnimationProvider from the single global capability decision). No component wires this itself.
+
+  1) Infinite decorative keyframes (nav-tab particles, the FloatingCTA shimmer sweep) stay PAUSED until
+     the engine confirms full motion is warranted (capable device, idle, not reduced/Data-Saver). A
+     paused animation holds frame 0 and does zero per-frame compositor work.
+*/
+.animate-sweep,
+.animate-particle-1,
+.animate-particle-2,
+.animate-particle-3,
+.animate-particle-4 {
+  animation-play-state: paused;
+}
+:root[data-tier="2"] .animate-sweep,
+:root[data-tier="2"] .animate-particle-1,
+:root[data-tier="2"] .animate-particle-2,
+:root[data-tier="2"] .animate-particle-3,
+:root[data-tier="2"] .animate-particle-4 {
+  animation-play-state: running;
+}
+
+/*
+  2) Non-full tiers (reduced-motion / Data-Saver / positively-detected low-end hardware or slow
+     network): drop the per-scroll-frame backdrop-blur that repaints on sticky bars — the single most
+     expensive paint on weak mobile GPUs. The translucent background beneath keeps the luxury tone.
+     Absent data-tier (SSR / pre-detection) keeps blur, so capable devices never flash.
+*/
+:root[data-tier="0"] .glass-card,
+:root[data-tier="0"] [class*="backdrop-blur"],
+:root[data-tier="1"] .glass-card,
+:root[data-tier="1"] [class*="backdrop-blur"] {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }

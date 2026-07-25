@@ -1,6 +1,7 @@
 import { Link } from "wouter";
-import { m, AnimatePresence } from "framer-motion";
+import { m, AnimatePresence, type TargetAndTransition } from "framer-motion";
 import { useSiteContent } from "@/providers/SiteContentProvider";
+import { useAnimationCapability } from "@/providers/AnimationProvider";
 
 const services = [
   { name: "Wedding Planning", desc: "From vision to reality — every detail orchestrated with precision and care." },
@@ -59,6 +60,19 @@ function WeddingImage({ image, aspectClass = "aspect-[4/5]", label = "" }: { ima
 
 export default function HomeBelowFold({ pulseHighlight }: { pulseHighlight: boolean }) {
   const { getGalleryImages } = useSiteContent();
+  const { allowMotion } = useAnimationCapability();
+
+  // Progressive float: an infinite loop that ONLY runs while the section is on screen (whileInView →
+  // Framer pauses it on scroll-out) and ONLY on capable, motion-friendly devices. On low-end / reduced-
+  // motion / Data-Saver the circles render perfectly still — same layout, zero continuous RAF cost.
+  const float = (keyframes: TargetAndTransition, duration: number, delay = 0) =>
+    allowMotion
+      ? {
+          whileInView: keyframes,
+          viewport: { once: false, amount: 0 },
+          transition: { duration, repeat: Infinity, ease: "easeInOut" as const, delay },
+        }
+      : {};
 
   // Phase A Task 1: the home page showcases the CMS gallery collection in published order. Each
   // position falls back to its bundled asset until the admin has uploaded that many gallery images.
@@ -319,8 +333,7 @@ export default function HomeBelowFold({ pulseHighlight }: { pulseHighlight: bool
               <m.div
                 className="absolute rounded-full overflow-hidden border-4 border-white shadow-2xl"
                 style={{ width: 260, height: 260, top: "50%", left: "50%", x: "-50%", y: "-50%" }}
-                animate={{ y: ["-52%", "-48%", "-52%"] }}
-                transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+                {...float({ y: ["-52%", "-48%", "-52%"] }, 6)}
               >
                 <img width="800" height="1000" src={images[0]} alt="Royal mandap" className="w-full h-full object-cover" decoding="async" loading="lazy" />
               </m.div>
@@ -329,8 +342,7 @@ export default function HomeBelowFold({ pulseHighlight }: { pulseHighlight: bool
               <m.div
                 className="absolute rounded-full overflow-hidden border-4 border-white shadow-xl"
                 style={{ width: 150, height: 150, top: "4%", right: "4%" }}
-                animate={{ y: [0, -12, 0] }}
-                transition={{ duration: 5, repeat: Infinity, ease: "easeInOut", delay: 0.8 }}
+                {...float({ y: [0, -12, 0] }, 5, 0.8)}
               >
                 <img width="800" height="1000" src={images[2]} alt="Mughal garden" className="w-full h-full object-cover" decoding="async" loading="lazy" />
               </m.div>
@@ -339,8 +351,7 @@ export default function HomeBelowFold({ pulseHighlight }: { pulseHighlight: bool
               <m.div
                 className="absolute rounded-full overflow-hidden border-4 border-white shadow-xl"
                 style={{ width: 110, height: 110, bottom: "8%", left: "8%" }}
-                animate={{ y: [0, 10, 0] }}
-                transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut", delay: 1.2 }}
+                {...float({ y: [0, 10, 0] }, 4.5, 1.2)}
               >
                 <img width="800" height="1000" src={images[4]} alt="Bridal entry" className="w-full h-full object-cover" decoding="async" loading="lazy" />
               </m.div>
@@ -349,8 +360,7 @@ export default function HomeBelowFold({ pulseHighlight }: { pulseHighlight: bool
               <m.div
                 className="absolute rounded-full overflow-hidden border-4 border-white shadow-lg"
                 style={{ width: 90, height: 90, bottom: "14%", right: "10%" }}
-                animate={{ y: [0, -8, 0] }}
-                transition={{ duration: 5.5, repeat: Infinity, ease: "easeInOut", delay: 0.3 }}
+                {...float({ y: [0, -8, 0] }, 5.5, 0.3)}
               >
                 <img width="800" height="1000" src={images[5]} alt="Engagement decor" className="w-full h-full object-cover" decoding="async" loading="lazy" />
               </m.div>
@@ -359,8 +369,7 @@ export default function HomeBelowFold({ pulseHighlight }: { pulseHighlight: bool
               <m.div
                 className="absolute rounded-full overflow-hidden border-2 border-gold/40 shadow-md"
                 style={{ width: 68, height: 68, top: "16%", left: "6%" }}
-                animate={{ y: [0, 7, 0] }}
-                transition={{ duration: 4, repeat: Infinity, ease: "easeInOut", delay: 2 }}
+                {...float({ y: [0, 7, 0] }, 4, 2)}
               >
                 <img width="800" height="1000" src={images[7]} alt="Floral detail" className="w-full h-full object-cover" decoding="async" loading="lazy" />
               </m.div>
