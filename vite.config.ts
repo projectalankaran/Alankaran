@@ -9,12 +9,32 @@ const port = Number(rawPort);
 
 const basePath = process.env.BASE_PATH || "/";
 
+/**
+ * Rolldown emits `<link rel="modulepreload">` for lazy chunks that are only reachable through
+ * `import()` (three-vendor, gsap-vendor, lenis-vendor). Those are decorative/deferred and must NOT
+ * compete with the LCP for bandwidth. This plugin drops their preload hints from the built HTML so
+ * they load on-demand (the runtime still fetches them when the feature actually mounts).
+ */
+const DEFERRED_PRELOAD_CHUNKS = ["three-vendor", "gsap-vendor", "lenis-vendor"];
+function stripDeferredPreloads() {
+  return {
+    name: "strip-deferred-modulepreloads",
+    transformIndexHtml(html: string) {
+      return html.replace(
+        /<link[^>]*rel="modulepreload"[^>]*>/g,
+        (tag) => (DEFERRED_PRELOAD_CHUNKS.some((c) => tag.includes(`/${c}-`)) ? "" : tag)
+      );
+    },
+  };
+}
+
 export default defineConfig({
   base: basePath,
   plugins: [
     react(),
     tailwindcss(),
     runtimeErrorOverlay(),
+    stripDeferredPreloads(),
     ...(process.env.NODE_ENV !== "production" &&
     process.env.REPL_ID !== undefined
       ? [
@@ -52,6 +72,11 @@ export default defineConfig({
           // Three.js + R3F: ~600KB — only loads when HeroCanvas/DecorCanvas mount
           if (id.includes("node_modules/three") || id.includes("node_modules/@react-three")) {
             return "three-vendor";
+          }
+          // Firebase (app + auth + firestore): large — isolated so it caches independently
+          // of the rest of the vendor graph and never bloats an unrelated chunk.
+          if (id.includes("node_modules/firebase") || id.includes("node_modules/@firebase")) {
+            return "firebase-vendor";
           }
           // GSAP + ScrollTrigger: only loads on scroll events
           if (id.includes("node_modules/gsap")) {

@@ -705,4 +705,21 @@
 
   --app-font-serif: 'Cormorant Garamond', serif;
   --app-font-script: 'Great Vibes', cursive;
+}
+
+/*
+  Accessibility: honor the OS "reduce motion" setting site-wide. Collapses CSS animations,
+  transitions, and scroll-behavior to near-instant so vestibular-sensitive visitors aren't
+  subjected to the cinematic zooms, parallax, and reveal animations. The decorative WebGL hero
+  layer is skipped entirely in JS (HeroSection) under the same query.
+*/
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }

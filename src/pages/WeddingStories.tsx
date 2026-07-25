@@ -129,6 +129,7 @@ export default function WeddingStories() {
       <SEO
         title="Real Wedding Stories"
         description="Read the real wedding stories of couples who celebrated their love with Alankaran's luxury planning and styling."
+        preloadImage={heroImage}
       />
       {/* Hero */}
       <section className="relative h-[65vh] flex items-end pb-20 overflow-hidden">

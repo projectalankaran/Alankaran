@@ -12,6 +12,23 @@ export default function HeroSection() {
   const [mouseX, setMouseX] = useState(0);
   const [mouseY, setMouseY] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
+  // Gate the decorative WebGL layer: its ~235KB (gzip) three-vendor chunk must not download
+  // until the browser is idle (after LCP/hydration), and never for reduced-motion visitors.
+  const [mount3D, setMount3D] = useState(false);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) return;
+    const schedule =
+      typeof requestIdleCallback !== "undefined"
+        ? (cb: () => void) => requestIdleCallback(cb, { timeout: 2500 })
+        : (cb: () => void) => window.setTimeout(cb, 1200);
+    const id = schedule(() => setMount3D(true));
+    return () => {
+      if (typeof requestIdleCallback !== "undefined") cancelIdleCallback(id as number);
+      else clearTimeout(id as number);
+    };
+  }, []);
 
   const landingSlides = [
     {
@@ -115,9 +132,11 @@ export default function HeroSection() {
               />
             </m.div>
           </AnimatePresence>
-          <Suspense fallback={null}>
-            <HeroCanvas mouseX={mouseX} mouseY={mouseY} isMobile={isMobile} />
-          </Suspense>
+          {mount3D && (
+            <Suspense fallback={null}>
+              <HeroCanvas mouseX={mouseX} mouseY={mouseY} isMobile={isMobile} />
+            </Suspense>
+          )}
         </div>
 
         {/* Cinematic Overlays */}

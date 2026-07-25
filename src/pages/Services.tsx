@@ -96,6 +96,7 @@ export default function Services() {
       <SEO
         title="Signature Services"
         description="Explore our bespoke wedding planning, luxury floral styling, and mandap design services, crafted for your unique celebration."
+        preloadImage={heroImage}
         url="https://alankaran.com/services"
       />
       <StructuredData

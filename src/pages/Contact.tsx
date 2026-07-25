@@ -92,6 +92,7 @@ export default function Contact() {
       <SEO
         title="Contact Us & Inquiries"
         description="Begin your luxury wedding journey with Alankaran. Contact our studios to start planning your celebration."
+        preloadImage={heroImage}
       />
 
       {/* Toast */}

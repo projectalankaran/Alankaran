@@ -33,6 +33,7 @@ export default function About() {
       <SEO
         title="Our Story & Philosophy"
         description="Discover the philosophy behind Alankaran. We don't just decorate spaces—we compose immersive luxury wedding experiences rooted in Indian heritage."
+        preloadImage={heroImage}
         url="https://alankaran.com/about"
       />
       <StructuredData

@@ -12,7 +12,6 @@ import NotFound from "@/pages/not-found";
 import PageTransition from "@/components/PageTransition";
 import FloatingCTA from "@/components/FloatingCTA";
 import { AuthProvider } from "@/context/AuthContext";
-import { AdminRouter } from "@/components/admin/AdminRouter";
 import { SiteContentProvider } from "@/providers/SiteContentProvider";
 import { SiteErrorBoundary } from "@/components/common/SiteErrorBoundary";
 
@@ -23,6 +22,11 @@ function ScrollToTop() {
   }, [location]);
   return null;
 }
+
+// Admin surface is lazy so its Firebase-heavy pages never ship in the public entry chunk.
+const AdminRouter = lazy(() =>
+  import("@/components/admin/AdminRouter").then((m) => ({ default: m.AdminRouter }))
+);
 
 const Home = lazy(() => import("@/pages/Home"));
 const About = lazy(() => import("@/pages/About"));
@@ -98,7 +102,9 @@ function MainContent({ showWhatsApp }: { showWhatsApp: boolean }) {
   if (isAdminRoute) {
     return (
       <AuthProvider>
-        <AdminRouter />
+        <Suspense fallback={<PageLoader />}>
+          <AdminRouter />
+        </Suspense>
       </AuthProvider>
     );
   }
