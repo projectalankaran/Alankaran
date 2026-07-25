@@ -4,6 +4,7 @@ import { m, AnimatePresence } from "framer-motion";
 import { Menu, X } from "lucide-react";
 import { useBooking } from "@/context/BookingContext";
 import Logo from "@/components/Logo";
+import { prefetchRoute } from "@/utils/routePrefetch";
 
 const navLinks = [
   { label: "Home", href: "/" },
@@ -73,7 +74,12 @@ export default function Navbar() {
             {navLinks.map((link) => {
               const isActive = location === link.href;
               return (
-                <Link key={link.href} href={link.href}>
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  onMouseEnter={() => prefetchRoute(link.href)}
+                  onFocus={() => prefetchRoute(link.href)}
+                >
                   <m.span
                     onClick={(e) => handleLinkClick(e, link.href)}
                     className="group relative cursor-pointer pb-2 pt-1 px-2.5 text-[9px] xl:text-[9.5px] tracking-[0.06em] xl:tracking-[0.1em] uppercase font-semibold block overflow-hidden rounded-md"
@@ -179,7 +185,11 @@ export default function Navbar() {
                     exit={{ opacity: 0, y: 20 }}
                     transition={{ delay: 0.05 * i + 0.1, duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
                   >
-                    <Link href={link.href}>
+                    <Link
+                      href={link.href}
+                      onMouseEnter={() => prefetchRoute(link.href)}
+                      onFocus={() => prefetchRoute(link.href)}
+                    >
                       <m.span
                         onClick={(e) => handleLinkClick(e, link.href)}
                         className="font-serif text-3xl cursor-pointer block relative overflow-hidden px-6 py-2 rounded-lg"

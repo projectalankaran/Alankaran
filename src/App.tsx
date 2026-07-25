@@ -1,7 +1,5 @@
 import { Switch, Route, Router as WouterRouter, useLocation } from "wouter";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
-import { TooltipProvider } from "@/components/ui/tooltip";
 import { AnimatePresence, LazyMotion, domAnimation } from "framer-motion";
 import { Suspense, lazy, useState, useEffect } from "react";
 import { HelmetProvider } from "react-helmet-async";
@@ -37,8 +35,6 @@ const WeddingStories = lazy(() => import("@/pages/WeddingStories"));
 const Gallery = lazy(() => import("@/pages/Gallery"));
 const Testimonials = lazy(() => import("@/pages/Testimonials"));
 const Contact = lazy(() => import("@/pages/Contact"));
-
-const queryClient = new QueryClient();
 
 function PageLoader() {
   return (
@@ -147,22 +143,18 @@ function App({ helmetContext, isServer = false }: { helmetContext?: any, isServe
 
   return (
     <HelmetProvider context={helmetContext}>
-      <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-            <BookingProvider>
-              <LazyMotion features={domAnimation} strict>
-                {isServer ? (
-                  <MainContent showWhatsApp={showWhatsApp} />
-                ) : (
-                  <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-                    <MainContent showWhatsApp={showWhatsApp} />
-                  </WouterRouter>
-                )}
-              </LazyMotion>
-            </BookingProvider>
-          <Toaster />
-        </TooltipProvider>
-      </QueryClientProvider>
+      <BookingProvider>
+        <LazyMotion features={domAnimation} strict>
+          {isServer ? (
+            <MainContent showWhatsApp={showWhatsApp} />
+          ) : (
+            <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+              <MainContent showWhatsApp={showWhatsApp} />
+            </WouterRouter>
+          )}
+        </LazyMotion>
+        <Toaster />
+      </BookingProvider>
     </HelmetProvider>
   );
 }
