@@ -2,7 +2,6 @@ import { useState } from "react";
 import { m, AnimatePresence } from "framer-motion";
 import { Check } from "lucide-react";
 import Footer from "@/components/Footer";
-import Consultation from "@/components/Consultation";
 import SEO from "@/components/SEO";
 import { useSiteContent, useContactInfo } from "@/providers/SiteContentProvider";
 import { buildWhatsAppUrl, buildMapEmbedUrl } from "@/domains/cms/constants";
@@ -313,7 +312,6 @@ export default function Contact() {
         </p>
       </div>
 
-      <Consultation />
       <Footer />
     </div>
   );

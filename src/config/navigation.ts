@@ -7,6 +7,7 @@ import {
   History,
   ShieldCheck,
   Heart,
+  Inbox,
 } from "lucide-react";
 import { ROUTES } from "@/constants/routes";
 
@@ -61,6 +62,14 @@ export const navigationItems: NavigationItem[] = [
     title: "Global Settings",
     icon: Settings,
     route: ROUTES.ADMIN.SETTINGS,
+    enabled: true,
+    badge: null,
+  },
+  {
+    id: "inquiries",
+    title: "Inquiries",
+    icon: Inbox,
+    route: ROUTES.ADMIN.INQUIRIES,
     enabled: true,
     badge: null,
   },

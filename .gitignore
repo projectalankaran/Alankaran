@@ -41,6 +41,9 @@ firebase-debug.log*
 scratch/
 *.upload
 
+# Internal Documentation
+/docs
+
 # Logs
 npm-debug.log*
 yarn-debug.log*

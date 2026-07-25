@@ -249,7 +249,19 @@ export interface CMSAnalyticsEvent {
  * Phase A Task 7 — Public website inquiry submissions.
  * Stored inside `cmsInquiries/{inquiryId}`. Created by anonymous visitors; readable by admins only.
  */
-export type InquiryStatus = "new" | "contacted" | "archived";
+/**
+ * Lead lifecycle. `new` is the only status a public form may write (pinned by the `cmsInquiries`
+ * create rule); every later status is set by an admin from the Inquiries dashboard. `archived` is
+ * retained for backward compatibility with any pre-existing records.
+ */
+export type InquiryStatus =
+  | "new"
+  | "contacted"
+  | "follow_up"
+  | "quotation_sent"
+  | "converted"
+  | "closed"
+  | "archived";
 
 /** Which form/page produced the inquiry — used to route follow-up. */
 export type InquirySourcePage = "contact" | "booking" | "consultation" | "destinations";
@@ -271,10 +283,17 @@ export interface CMSInquiry {
   budget?: string;
   company?: string;
   referralSource?: string;
+  /** Internal admin-only note, editable from the Inquiries dashboard. Never written by public forms. */
+  notes?: string;
+  /** Epoch millis of the last admin edit (status/notes). Absent on submitter-created records. */
+  updatedAt?: number;
 }
 
-/** The caller-supplied portion of an inquiry; `id`, `createdAt`, and `status` are assigned on write. */
-export type CMSInquiryInput = Omit<CMSInquiry, "id" | "createdAt" | "status">;
+/**
+ * The caller-supplied portion of an inquiry; `id`, `createdAt`, and `status` are assigned on write.
+ * `notes` and `updatedAt` are admin-only and excluded so a public form can never send them.
+ */
+export type CMSInquiryInput = Omit<CMSInquiry, "id" | "createdAt" | "status" | "notes" | "updatedAt">;
 
 /**
  * Phase A Task 8 — Site-wide contact details.

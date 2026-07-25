@@ -169,6 +169,17 @@ export interface IFirestoreService {
   ): Unsubscribe;
 
   /**
+   * Real-time subscription to a whole collection, optionally ordered and capped.
+   * Fires `callback(docs)` on the initial snapshot and again whenever any matching document
+   * is added, changed, or removed in the cloud. Returns a no-op unsubscribe during SSR.
+   */
+  subscribeCollection<T extends Record<string, any>>(
+    collectionName: FirestoreCollectionName,
+    options: FirestoreListOptions,
+    callback: (data: T[], error?: Error) => void
+  ): Unsubscribe;
+
+  /**
    * Executes atomic Firestore transactions.
    * Guarantees all multi-document operations succeed or fail as a single atomic unit.
    */
@@ -358,6 +369,42 @@ export const firestoreService: IFirestoreService = {
       },
       (error) => {
         callback(null, toOperationError("subscribe", path, error));
+      }
+    );
+  },
+
+  subscribeCollection<T extends Record<string, any>>(
+    collectionName: FirestoreCollectionName,
+    options: FirestoreListOptions = {},
+    callback: (data: T[], error?: Error) => void
+  ): Unsubscribe {
+    if (typeof window === "undefined") {
+      callback([]);
+      return () => {};
+    }
+
+    assertValidCollectionName(collectionName);
+    traceAttempt("subscribe", collectionName, options);
+
+    const constraints: QueryConstraint[] = [];
+    if (options.where) {
+      constraints.push(where(options.where.field, options.where.op, options.where.value));
+    }
+    if (options.orderBy) {
+      constraints.push(orderBy(options.orderBy.field, options.orderBy.direction || "asc"));
+    }
+    if (options.limit) {
+      constraints.push(limitTo(options.limit));
+    }
+
+    return onSnapshot(
+      query(collection(db, collectionName), ...constraints),
+      (snapshot) => {
+        traceSuccess("subscribe", collectionName);
+        callback(snapshot.docs.map((docSnap) => docSnap.data() as T));
+      },
+      (error) => {
+        callback([], toOperationError("subscribe", collectionName, error));
       }
     );
   },

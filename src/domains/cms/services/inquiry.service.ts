@@ -1,6 +1,7 @@
 import { firestoreService, FirestorePaths } from "@/services/firestore";
 import { auditLogService } from "./auditLog.service";
 import type { CMSInquiry, CMSInquiryInput, InquiryStatus } from "../types";
+import type { Unsubscribe } from "firebase/firestore";
 
 /**
  * Phase A Task 7 — Inquiry Persistence.
@@ -55,6 +56,25 @@ class InquiryService {
   }
 
   /**
+   * Live subscription to recent inquiries, newest first. Administrators only.
+   *
+   * Powers the Inquiries dashboard: a website submission lands in Firestore and this fires again with
+   * the new lead already at the top — no polling, no manual refresh. Reads are gated by the
+   * `cmsInquiries` read rule (`isSignedIn()`), so only an authenticated admin can open this stream.
+   * Returns the Firestore unsubscribe handle; the caller must invoke it on unmount.
+   */
+  subscribeRecent(
+    callback: (inquiries: CMSInquiry[], error?: Error) => void,
+    limitCount: number = 200
+  ): Unsubscribe {
+    return firestoreService.subscribeCollection<CMSInquiry>(
+      FirestorePaths.inquiriesCollection(),
+      { orderBy: { field: "createdAt", direction: "desc" }, limit: limitCount },
+      callback
+    );
+  }
+
+  /**
    * Retrieves recent inquiries, newest first. Administrators only.
    */
   async getRecent(limitCount: number = 100): Promise<CMSInquiry[]> {
@@ -72,12 +92,45 @@ class InquiryService {
   }
 
   async updateStatus(inquiryId: string, status: InquiryStatus, userEmail: string): Promise<void> {
-    await firestoreService.update<CMSInquiry>(FirestorePaths.inquiry(inquiryId), { status });
+    await firestoreService.update<CMSInquiry>(FirestorePaths.inquiry(inquiryId), {
+      status,
+      updatedAt: Date.now(),
+    });
     auditLogService.log(
       "Inquiry",
       userEmail || "admin@alankaran.com",
       `inquiry/${inquiryId}`,
       `Inquiry marked as ${status}`
+    );
+  }
+
+  /**
+   * Saves an internal admin note onto an inquiry. Admin-only — the `cmsInquiries` update rule requires
+   * an authenticated session, and public forms never touch this field.
+   */
+  async updateNotes(inquiryId: string, notes: string, userEmail: string): Promise<void> {
+    await firestoreService.update<CMSInquiry>(FirestorePaths.inquiry(inquiryId), {
+      notes,
+      updatedAt: Date.now(),
+    });
+    auditLogService.log(
+      "Inquiry",
+      userEmail || "admin@alankaran.com",
+      `inquiry/${inquiryId}`,
+      notes.trim() ? "Inquiry note updated" : "Inquiry note cleared"
+    );
+  }
+
+  /**
+   * Permanently deletes an inquiry. Admin-only — gated by the `cmsInquiries` delete rule.
+   */
+  async remove(inquiryId: string, userEmail: string): Promise<void> {
+    await firestoreService.delete(FirestorePaths.inquiry(inquiryId));
+    auditLogService.log(
+      "Inquiry",
+      userEmail || "admin@alankaran.com",
+      `inquiry/${inquiryId}`,
+      "Inquiry deleted"
     );
   }
 }

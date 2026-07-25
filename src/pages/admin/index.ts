@@ -5,5 +5,6 @@ export { AdminImages } from "./Images";
 export { AdminDebug } from "./Debug";
 export { AdminGallery } from "./Gallery";
 export { AdminActivityLog } from "./ActivityLog";
+export { AdminInquiries } from "./Inquiries";
 export { AdminSettings } from "./Settings";
 export { WeddingStoriesAdmin } from "./WeddingStoriesAdmin";

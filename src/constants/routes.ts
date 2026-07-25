@@ -22,6 +22,7 @@ export const ROUTES = {
     GALLERY: "/admin/gallery",
     STORIES: "/admin/wedding-stories",
     SETTINGS: "/admin/settings",
+    INQUIRIES: "/admin/inquiries",
     ACTIVITY: "/admin/activity",
   },
 } as const;
