@@ -2,6 +2,7 @@ import { Link } from "wouter";
 import { m } from "framer-motion";
 import Footer from "@/components/Footer";
 import SEO from "@/components/SEO";
+import OptimizedImage from "@/components/common/OptimizedImage";
 import { useSiteContent } from "@/providers/SiteContentProvider";
 import { useWeddingStories } from "@/providers/WeddingStoriesProvider";
 
@@ -133,7 +134,7 @@ export default function WeddingStories() {
       />
       {/* Hero */}
       <section className="relative h-[65vh] flex items-end pb-20 overflow-hidden">
-        <div className="absolute inset-0 z-0" style={{ backgroundImage: `url(${heroImage})`, backgroundSize: "cover", backgroundPosition: "center", filter: "brightness(0.85) saturate(1.0)" }} />
+        <OptimizedImage fill priority src={heroImage} alt="Real Alankaran wedding stories" sizes="100vw" widths={[640, 828, 1200, 1600, 1920]} className="z-0" style={{ filter: "brightness(0.85) saturate(1.0)" }} />
         <div className="absolute inset-0 z-10" style={{ background: heroGradient }} />
         <div className="relative max-w-screen-xl mx-auto px-6 lg:px-12 z-20">
           <m.p className="section-label mb-4 text-gold" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>{heroSubtitle}</m.p>

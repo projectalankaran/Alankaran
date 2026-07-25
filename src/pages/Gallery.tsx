@@ -3,6 +3,7 @@ import { m, AnimatePresence } from "framer-motion";
 import { X, ChevronLeft, ChevronRight, Maximize2, ImageOff } from "lucide-react";
 import Footer from "@/components/Footer";
 import SEO from "@/components/SEO";
+import OptimizedImage from "@/components/common/OptimizedImage";
 import { useSiteContent } from "@/providers/SiteContentProvider";
 import { storageProvider } from "@/storage";
 import { BUNDLED_GALLERY_FALLBACKS, DEFAULT_GALLERY_CATEGORY } from "@/domains/cms/constants";
@@ -224,14 +225,15 @@ export default function Gallery() {
       />
       {/* Hero */}
       <section className="relative flex h-[55vh] items-end overflow-hidden pb-20">
-        <div
-          className="absolute inset-0 z-0"
-          style={{
-            backgroundImage: `url(${heroImage})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-            filter: "brightness(0.85) saturate(1.0)",
-          }}
+        <OptimizedImage
+          fill
+          priority
+          src={heroImage}
+          alt="Alankaran portfolio gallery"
+          sizes="100vw"
+          widths={[640, 828, 1200, 1600, 1920]}
+          className="z-0"
+          style={{ filter: "brightness(0.85) saturate(1.0)" }}
         />
         <div
           className="absolute inset-0 z-10"

@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
+import { isCloudinaryUrl, cldUrl, cldSrcSet } from "@/utils/cloudinaryImage";
 
 /**
  * The single image primitive for the public site.
@@ -27,6 +28,8 @@ export interface OptimizedImageProps
   sizes?: string;
   /** Fixed aspect ratio (e.g. "3 / 4" or "16 / 9"). Reserves layout space and drives the crop. */
   aspectRatio?: string;
+  /** Absolute-fill mode: covers the nearest positioned ancestor (drop-in for a background-image). */
+  fill?: boolean;
   /** LCP image: eager load, high fetch priority, sync decode, no lazy. */
   priority?: boolean;
   /** Cloudinary crop mode. "fill" (default, exact box) or "limit" (scale down, keep whole image). */
@@ -38,21 +41,13 @@ export interface OptimizedImageProps
   wrapperClassName?: string;
 }
 
-function isCloudinary(url: string): boolean {
-  return /^https?:\/\//.test(url) && url.includes("/image/upload/");
-}
-
-/** Injects a Cloudinary transformation segment right after `/image/upload/`. */
-function withTransform(url: string, transform: string): string {
-  return url.replace("/image/upload/", `/image/upload/${transform}/`);
-}
-
 export function OptimizedImage({
   src,
   alt,
   widths = DEFAULT_WIDTHS,
   sizes = "100vw",
   aspectRatio,
+  fill = false,
   priority = false,
   crop = "fill",
   fit = "cover",
@@ -68,22 +63,17 @@ export function OptimizedImage({
   const ratio = ratioParts && ratioParts.length === 2 ? ratioParts[0] / ratioParts[1] : undefined;
 
   const { finalSrc, srcSet } = useMemo(() => {
-    if (!isCloudinary(src)) {
+    if (!isCloudinaryUrl(src)) {
       // Local fallback or remote host — serve as-is (no duplicate/oversized download attempted).
       return { finalSrc: src, srcSet: undefined as string | undefined };
     }
-    const build = (w: number, includeDpr: boolean) => {
-      const parts = ["f_auto", "q_auto"];
-      if (includeDpr) parts.push("dpr_auto");
-      parts.push(`c_${crop}`, `w_${w}`);
-      if (ratio) parts.push(`h_${Math.round(w / ratio)}`);
-      return withTransform(src, parts.join(","));
-    };
-    const set = widths.map((w) => `${build(w, false)} ${w}w`).join(", ");
+    const set = cldSrcSet(src, widths, { crop, ratio });
     // Base src (used when srcSet can't apply) carries dpr_auto for correct retina scaling.
     const mid = widths[Math.floor(widths.length / 2)];
-    return { finalSrc: build(mid, true), srcSet: set };
+    return { finalSrc: cldUrl(src, { width: mid, height: ratio ? Math.round(mid / ratio) : undefined, crop, dpr: true }), srcSet: set };
   }, [src, widths, crop, ratio]);
+
+  const positioned = fill || !!aspectRatio;
 
   const img = (
     <img
@@ -93,13 +83,13 @@ export function OptimizedImage({
       alt={alt}
       loading={priority ? "eager" : "lazy"}
       fetchPriority={priority ? "high" : "auto"}
-      decoding={priority ? "async" : "async"}
+      decoding="async"
       onLoad={() => setLoaded(true)}
       className={cn(
-        aspectRatio ? "absolute inset-0 h-full w-full" : "h-auto w-full",
+        positioned ? "absolute inset-0 h-full w-full" : "h-auto w-full",
         fit === "cover" ? "object-cover" : "object-contain",
-        "transition-opacity duration-500",
-        loaded ? "opacity-100" : "opacity-0",
+        // Priority (LCP) images render opaque immediately so the fade never delays LCP.
+        priority ? "opacity-100" : cn("transition-opacity duration-500", loaded ? "opacity-100" : "opacity-0"),
         className
       )}
       style={{ objectPosition, ...style }}
@@ -107,6 +97,8 @@ export function OptimizedImage({
     />
   );
 
+  // `fill` mode assumes the caller already provides a positioned ancestor (the hero <section>).
+  if (fill) return img;
   if (!aspectRatio) return img;
 
   return (

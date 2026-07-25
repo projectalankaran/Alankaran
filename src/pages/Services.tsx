@@ -2,6 +2,7 @@ import { Link } from "wouter";
 import { m } from "framer-motion";
 import Footer from "@/components/Footer";
 import SEO from "@/components/SEO";
+import OptimizedImage from "@/components/common/OptimizedImage";
 import StructuredData from "@/components/StructuredData";
 import { useSiteContent } from "@/providers/SiteContentProvider";
 
@@ -114,7 +115,7 @@ export default function Services() {
       />
       {/* Hero */}
       <section className="relative h-[65vh] flex items-end pb-20 overflow-hidden">
-        <div className="absolute inset-0 z-0" style={{ backgroundImage: `url(${heroImage})`, backgroundSize: "cover", backgroundPosition: "center", filter: "brightness(0.85) saturate(1.0)" }} />
+        <OptimizedImage fill priority src={heroImage} alt="Alankaran signature services" sizes="100vw" widths={[640, 828, 1200, 1600, 1920]} className="z-0" style={{ filter: "brightness(0.85) saturate(1.0)" }} />
         <div className="absolute inset-0 z-10" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.25) 60%, rgba(0,0,0,0.4) 100%)" }} />
         <div className="relative max-w-screen-xl mx-auto px-6 lg:px-12 z-20">
           <m.p className="section-label mb-4 text-gold" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.8 }}>What We Offer</m.p>

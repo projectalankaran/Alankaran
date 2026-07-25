@@ -7,8 +7,15 @@ import React, {
   useMemo,
   type ReactNode,
 } from "react";
-import { firestoreService, FirestorePaths } from "@/services/firestore";
-import { cmsCacheService, auditLogService, slotCoverageService } from "@/domains/cms/services";
+// Firebase deferral: the Firestore SDK is the single largest eager chunk on public pages. We import
+// only the Firebase-CLEAN pieces statically (path builders, the localStorage cache, coverage) and
+// pull the actual `firestoreService` (which drags in firebase-app + firebase-firestore) lazily inside
+// `loadSections`, which is already async. First paint renders from the memory/localStorage cache and
+// bundled fallbacks; the SDK loads afterward and refreshes content exactly as before — same data,
+// same resolution path, no new flicker class (the fallback→CMS swap already existed).
+import { FirestorePaths } from "@/services/firestore/firestorePaths";
+import { cmsCacheService } from "@/domains/cms/services/cmsCache.service";
+import { slotCoverageService } from "@/domains/cms/services/slotCoverage.service";
 import type { CMSSectionContent, SectionKey, CMSSlotMetadata, CMSContactInfo } from "@/domains/cms/types";
 import { PUBLIC_SECTIONS, DEFAULT_CONTACT_INFO, BUNDLED_GALLERY_FALLBACKS } from "@/domains/cms/constants";
 import { resolveGalleryImages, selectPublicSlotMap } from "@/domains/cms/utils/galleryResolver";
@@ -174,6 +181,8 @@ export function SiteContentProvider({ children }: SiteContentProviderProps) {
       }
 
       try {
+        // Lazy-load the Firestore SDK only now (after first paint / cache render).
+        const { firestoreService } = await import("@/services/firestore/firestore.service");
         const fetchPromises = CORE_SECTIONS.map(async (key) => {
           try {
             const doc = await firestoreService.get<any>(FirestorePaths.siteContent(key));

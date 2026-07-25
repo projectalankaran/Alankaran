@@ -15,7 +15,16 @@ const basePath = process.env.BASE_PATH || "/";
  * compete with the LCP for bandwidth. This plugin drops their preload hints from the built HTML so
  * they load on-demand (the runtime still fetches them when the feature actually mounts).
  */
-const DEFERRED_PRELOAD_CHUNKS = ["three-vendor", "gsap-vendor", "lenis-vendor"];
+const DEFERRED_PRELOAD_CHUNKS = [
+  "three-vendor",
+  "gsap-vendor",
+  "lenis-vendor",
+  // Firebase is loaded after first paint (SiteContentProvider/AuthContext dynamic-import it); rolldown
+  // still emits eager preload hints for these lazy chunks, so drop them from the critical path.
+  "firebase-vendor",
+  "firestore.service",
+  "inquiry.service",
+];
 function stripDeferredPreloads() {
   return {
     name: "strip-deferred-modulepreloads",

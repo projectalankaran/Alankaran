@@ -1,4 +1,5 @@
 import { useSiteContent } from "@/providers/SiteContentProvider";
+import { cldUrl } from "@/utils/cloudinaryImage";
 
 interface LogoProps {
   size?: number;
@@ -37,15 +38,20 @@ export default function Logo({ size = 52, showText = true, textColor = "hsl(var(
   // A published CMS logo replaces the vector mark only. The wordmark keeps its `textColor`, so the
   // Footer's light-on-dark lockup still works with an uploaded mark.
   if (cmsLogoUrl) {
+    const logoH = Math.round(size * 1.15);
+    // Request the mark at ~2× its rendered box (retina) instead of the full-resolution upload —
+    // a published logo previously downloaded at hundreds of KB to display at ~52px.
+    const optimizedLogo = cldUrl(cmsLogoUrl, { width: size * 2, height: logoH * 2, crop: "limit" });
     return (
       <div className={`flex items-center ${calculatedGap} select-none`}>
         <img
-          src={cmsLogoUrl}
+          src={optimizedLogo}
           alt="Alankaran"
           width={size}
-          height={Math.round(size * 1.15)}
-          style={{ width: size, height: Math.round(size * 1.15), objectFit: "contain" }}
+          height={logoH}
+          style={{ width: size, height: logoH, objectFit: "contain" }}
           decoding="async"
+          loading="eager"
         />
         {showText && (
           <div className="flex flex-col leading-none">
@@ -76,6 +82,7 @@ export default function Logo({ size = 52, showText = true, textColor = "hsl(var(
         viewBox="0 0 56 65"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
+        role="img"
         aria-label="Alankaran logo mark"
       >
         {/* ── Outer decorative arch ring ── */}

@@ -4,13 +4,15 @@ import StructuredData from "@/components/StructuredData";
 import Footer from "@/components/Footer";
 import HeroSection from "@/components/home/HeroSection";
 import { useSiteContent } from "@/providers/SiteContentProvider";
+import { heroImageUrl } from "@/utils/cloudinaryImage";
 
 // We use an IntersectionObserver wrapper (LazySection) later, but for now we just lazy load it
 const HomeBelowFold = memo(lazy(() => import("@/components/home/HomeBelowFold")));
 
 export default function Home() {
   const { getSlotImage } = useSiteContent();
-  const heroMainImage = getSlotImage("hero", "hero_main", "/images/hero-mandap.webp").url;
+  // Same transform the hero <img> uses, so the preload and the render request the identical URL.
+  const heroMainImage = heroImageUrl(getSlotImage("hero", "hero_main", "/images/hero-mandap.webp").url);
   const [pulseHighlight, setPulseHighlight] = useState(false);
 
   useEffect(() => {

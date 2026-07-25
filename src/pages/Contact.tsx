@@ -3,6 +3,7 @@ import { m, AnimatePresence } from "framer-motion";
 import { Check } from "lucide-react";
 import Footer from "@/components/Footer";
 import SEO from "@/components/SEO";
+import OptimizedImage from "@/components/common/OptimizedImage";
 import { useSiteContent, useContactInfo } from "@/providers/SiteContentProvider";
 import { buildWhatsAppUrl, buildMapEmbedUrl } from "@/domains/cms/constants";
 import { inquiryService } from "@/domains/cms/services";
@@ -118,7 +119,7 @@ export default function Contact() {
 
       {/* Hero */}
       <section className="relative h-[55vh] flex items-end pb-20 overflow-hidden">
-        <div className="absolute inset-0 z-0" style={{ backgroundImage: `url(${heroImage})`, backgroundSize: "cover", backgroundPosition: "center", filter: "brightness(0.85) saturate(1.0)" }} />
+        <OptimizedImage fill priority src={heroImage} alt="Contact Alankaran" sizes="100vw" widths={[640, 828, 1200, 1600, 1920]} className="z-0" style={{ filter: "brightness(0.85) saturate(1.0)" }} />
         <div className="absolute inset-0 z-10" style={{ background: "linear-gradient(to top, rgba(0,0,0,0.72) 0%, rgba(0,0,0,0.25) 60%, rgba(0,0,0,0.4) 100%)" }} />
         <div className="relative max-w-screen-xl mx-auto px-6 lg:px-12 z-20">
           <m.p className="section-label mb-4 text-gold" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>Get in Touch</m.p>

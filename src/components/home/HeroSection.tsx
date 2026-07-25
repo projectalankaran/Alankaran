@@ -3,6 +3,7 @@ import { Link } from "wouter";
 import { m, AnimatePresence, useSpring, useTransform } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useSiteContent } from "@/providers/SiteContentProvider";
+import { heroImageUrl } from "@/utils/cloudinaryImage";
 
 const HeroCanvas = lazy(() => import("@/components/HeroCanvas"));
 
@@ -32,31 +33,31 @@ export default function HeroSection() {
 
   const landingSlides = [
     {
-      image: getSlotImage("hero", "hero_main", "/images/hero-mandap.webp", "Alankaran Royal Mandap").url,
+      image: heroImageUrl(getSlotImage("hero", "hero_main", "/images/hero-mandap.webp", "Alankaran Royal Mandap").url),
       title: "ALANKARAN",
       subtitle: "Hyderabad's Premier Luxury Wedding Planners & Designers",
       tagline: "✦ BESPOKE NIZAMI ROYALTY & MODERN ROMANCE ✦"
     },
     {
-      image: getSlotImage("hero", "hero_secondary", "/images/gallery-royal-1.webp", "Elevated Artistry").url,
+      image: heroImageUrl(getSlotImage("hero", "hero_secondary", "/images/gallery-royal-1.webp", "Elevated Artistry").url),
       title: "ELEVATED ARTISTRY",
       subtitle: "Immersive Architectural Decor & Floral Styling",
       tagline: "✦ COMPOSING ETERNAL MEMORIES ✦"
     },
     {
-      image: getSlotImage("hero", "hero_slide_3", "/images/cinematic_floral_wedding.webp", "Grand Celebrations").url,
+      image: heroImageUrl(getSlotImage("hero", "hero_slide_3", "/images/cinematic_floral_wedding.webp", "Grand Celebrations").url),
       title: "GRAND CELEBRATIONS",
       subtitle: "Flawless Execution Rooted in Splendor and Grace",
       tagline: "✦ ESTABLISHED 2011 — HYDERABAD ✦"
     },
     {
-      image: getSlotImage("hero", "hero_slide_4", "/images/mughal_garden.webp", "Mughal Garden Luxury").url,
+      image: heroImageUrl(getSlotImage("hero", "hero_slide_4", "/images/mughal_garden.webp", "Mughal Garden Luxury").url),
       title: "MUGHAL GARDEN LUXURY",
       subtitle: "Symmetry, Blooms & Sacred Temple Floristry",
       tagline: "✦ EVERY DETAIL CREATED WITH DELIBERATE INTENT ✦"
     },
     {
-      image: getSlotImage("hero", "hero_slide_5", "/images/hero-couple.webp", "Royal Couple Portrait").url,
+      image: heroImageUrl(getSlotImage("hero", "hero_slide_5", "/images/hero-couple.webp", "Royal Couple Portrait").url),
       title: "ROYAL LUXURY",
       subtitle: "Nizami Splendor & Modern Romance",
       tagline: "✦ AN ANTHOLOGY OF LOVE STORIES ✦"

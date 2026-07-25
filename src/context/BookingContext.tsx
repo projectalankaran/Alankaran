@@ -1,5 +1,8 @@
-import React, { createContext, useContext, useState, ReactNode } from "react";
-import BookingModal from "@/components/BookingModal";
+import React, { createContext, useContext, useState, lazy, Suspense, ReactNode } from "react";
+
+// Lazy: BookingModal pulls the inquiry service (and thus Firebase) — it must not ride the eager
+// public bundle. It only mounts once the visitor actually opens the booking flow.
+const BookingModal = lazy(() => import("@/components/BookingModal"));
 
 interface BookingOptions {
   eventType?: string;
@@ -15,10 +18,12 @@ const BookingContext = createContext<BookingContextType | undefined>(undefined);
 
 export function BookingProvider({ children }: { children: ReactNode }) {
   const [isOpen, setIsOpen] = useState(false);
+  const [hasOpened, setHasOpened] = useState(false);
   const [options, setOptions] = useState<BookingOptions | undefined>(undefined);
 
   const openBookingModal = (opts?: BookingOptions) => {
     setOptions(opts);
+    setHasOpened(true);
     setIsOpen(true);
   };
   const closeBookingModal = () => {
@@ -29,7 +34,11 @@ export function BookingProvider({ children }: { children: ReactNode }) {
   return (
     <BookingContext.Provider value={{ openBookingModal, closeBookingModal }}>
       {children}
-      <BookingModal isOpen={isOpen} onClose={closeBookingModal} options={options} />
+      {hasOpened && (
+        <Suspense fallback={null}>
+          <BookingModal isOpen={isOpen} onClose={closeBookingModal} options={options} />
+        </Suspense>
+      )}
     </BookingContext.Provider>
   );
 }
