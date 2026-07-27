@@ -3,7 +3,6 @@ import { Link } from "wouter";
 import { m, AnimatePresence, useSpring, useTransform } from "framer-motion";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useSiteContent } from "@/providers/SiteContentProvider";
-import { heroImageUrl } from "@/utils/cloudinaryImage";
 import { useAnimationCapability } from "@/providers/AnimationProvider";
 import { useInViewport } from "@/hooks/useInViewport";
 import { OptimizedImage } from "@/components/common/OptimizedImage";
@@ -28,35 +27,41 @@ export default function HeroSection() {
   const mount3D = allowWebGL && heroInView;
 
   // Memoized: rebuilt only when CMS content changes, not on every render (was re-running 5×
-  // getSlotImage + 5× heroImageUrl on each interval tick / resize / pointer move).
+  // getSlotImage on each interval tick / resize / pointer move).
+  //
+  // NOTE: these are RAW slot URLs — `heroImageUrl()` is deliberately not applied here.
+  // <OptimizedImage> owns Cloudinary transformation. Pre-transforming produced a stacked URL
+  // (`.../c_fill,w_768/f_auto,q_auto,dpr_auto,c_limit,w_1920/...`) where Cloudinary derives a 1920px
+  // intermediate and then re-crops it: two derivations, two cold-cache misses, and doubled
+  // transformation cost for a strictly worse result. One transform, applied in one place.
   const landingSlides = useMemo(
     () => [
       {
-        image: heroImageUrl(getSlotImage("hero", "hero_main", "/images/hero-mandap.webp", "Alankaran Royal Mandap").url),
+        image: getSlotImage("hero", "hero_main", "/images/hero-mandap.webp", "Alankaran Royal Mandap").url,
         title: "ALANKARAN",
         subtitle: "Hyderabad's Premier Luxury Wedding Planners & Designers",
         tagline: "✦ BESPOKE NIZAMI ROYALTY & MODERN ROMANCE ✦"
       },
       {
-        image: heroImageUrl(getSlotImage("hero", "hero_secondary", "/images/gallery-royal-1.webp", "Elevated Artistry").url),
+        image: getSlotImage("hero", "hero_secondary", "/images/gallery-royal-1.webp", "Elevated Artistry").url,
         title: "ELEVATED ARTISTRY",
         subtitle: "Immersive Architectural Decor & Floral Styling",
         tagline: "✦ COMPOSING ETERNAL MEMORIES ✦"
       },
       {
-        image: heroImageUrl(getSlotImage("hero", "hero_slide_3", "/images/cinematic_floral_wedding.webp", "Grand Celebrations").url),
+        image: getSlotImage("hero", "hero_slide_3", "/images/cinematic_floral_wedding.webp", "Grand Celebrations").url,
         title: "GRAND CELEBRATIONS",
         subtitle: "Flawless Execution Rooted in Splendor and Grace",
         tagline: "✦ ESTABLISHED 2011 — HYDERABAD ✦"
       },
       {
-        image: heroImageUrl(getSlotImage("hero", "hero_slide_4", "/images/mughal_garden.webp", "Mughal Garden Luxury").url),
+        image: getSlotImage("hero", "hero_slide_4", "/images/mughal_garden.webp", "Mughal Garden Luxury").url,
         title: "MUGHAL GARDEN LUXURY",
         subtitle: "Symmetry, Blooms & Sacred Temple Floristry",
         tagline: "✦ EVERY DETAIL CREATED WITH DELIBERATE INTENT ✦"
       },
       {
-        image: heroImageUrl(getSlotImage("hero", "hero_slide_5", "/images/hero-couple.webp", "Royal Couple Portrait").url),
+        image: getSlotImage("hero", "hero_slide_5", "/images/hero-couple.webp", "Royal Couple Portrait").url,
         title: "ROYAL LUXURY",
         subtitle: "Nizami Splendor & Modern Romance",
         tagline: "✦ AN ANTHOLOGY OF LOVE STORIES ✦"
@@ -67,16 +72,46 @@ export default function HeroSection() {
 
   const slideCount = landingSlides.length;
 
+  // ── Autoplay gate ──────────────────────────────────────────────────────────────────────────
+  //
+  // The carousel must not advance until the page has finished loading.
+  //
+  // Every slide paints a NEW full-viewport <img> (AnimatePresence keys on the slide index, so each
+  // transition mounts a fresh element). Until the browser sees a user interaction, LCP stays open,
+  // and each of those full-bleed paints registers as a fresh candidate. Measured on Lighthouse
+  // mobile: slide 0 painted correctly at ~1.3 s, then slides 2-5 landed at 11.1 s / 16.2 s / 20.1 s
+  // / 24.6 s and LCP was reported as 12.4 s — the carousel was throwing away a good LCP roughly
+  // ten seconds after earning it. Lighthouse's own `largest-contentful-paint-element` audit came
+  // back `notApplicable` because the node it measured had already been unmounted.
+  //
+  // Waiting for `load` means autoplay begins after the last subresource settles, which is strictly
+  // after the LCP candidate set has stopped growing from anything the loader controls. No UX change
+  // on a warm/fast connection (load fires in well under the old 4.5 s first-advance delay); on a
+  // slow connection the hero simply holds its first frame a little longer, which is the correct
+  // behaviour anyway.
+  //
+  // Deliberately NOT gated on `allowMotion`: that is tier-based and false for reduced-motion and
+  // Data-Saver users, who still expect the carousel to cycle. This is a load-timing gate, not a
+  // motion-preference gate.
+  const [autoplayReady, setAutoplayReady] = useState(false);
+
+  useEffect(() => {
+    const start = () => setAutoplayReady(true);
+    const events = ["pointerdown", "touchstart", "keydown", "wheel", "scroll"] as const;
+    for (const e of events) window.addEventListener(e, start, { once: true, passive: true });
+    return () => { for (const e of events) window.removeEventListener(e, start); };
+  }, []);
+
   // Stable interval: depends only on the (fixed) slide count and pauses while the hero is off screen
   // or the tab is hidden — no more tearing down/recreating the timer on every slide, and no wasted
   // crossfades animating a hero nobody is looking at. Functional update avoids a currentSlide dep.
   useEffect(() => {
-    if (!heroInView) return;
+    if (!heroInView || !autoplayReady) return;
     const timer = setInterval(() => {
       setCurrentLandingSlide((prev) => (prev + 1) % slideCount);
     }, 4500);
     return () => clearInterval(timer);
-  }, [slideCount, heroInView]);
+  }, [slideCount, heroInView, autoplayReady]);
 
   const nextLandingSlide = () => {
     setCurrentLandingSlide((prev) => (prev + 1) % landingSlides.length);

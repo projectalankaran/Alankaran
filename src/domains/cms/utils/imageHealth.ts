@@ -23,6 +23,8 @@
  *   missing, falling back to itself would achieve nothing.
  */
 
+import { isCloudinaryUrl, cldUrl } from "@/utils/cloudinaryImage";
+
 export type ImageHealth = "unknown" | "healthy" | "broken";
 
 const health = new Map<string, ImageHealth>();
@@ -31,6 +33,30 @@ const inFlight = new Set<string>();
 /** Remote URLs only — bundled assets ship with the build and are not worth a round trip. */
 function isRemote(url: string): boolean {
   return /^https?:\/\//i.test(url);
+}
+
+/**
+ * The URL actually fetched to answer "does this asset still exist?".
+ *
+ * The probe used to load `url` verbatim — the raw Firestore value, which carries no Cloudinary
+ * transform and therefore resolves to the **full-resolution original**. Measured on a Lighthouse
+ * mobile run of `/`: 14 untransformed originals totalling 3,525 KB, or 51% of the entire page
+ * weight, downloaded purely to check for 404s and then discarded. Every one of them contended for
+ * bandwidth with the LCP image.
+ *
+ * A 1x1 derivation answers exactly the same question. Cloudinary derives from the same source
+ * asset, so a deleted or renamed original 404s on the derived URL identically — but the response is
+ * a couple of hundred bytes instead of a couple of hundred kilobytes.
+ *
+ * Safe against "strict transformations" (which would 403 an unsigned derived URL): the site already
+ * renders `f_auto,q_auto,c_fill,w_*` derivations successfully, so unsigned transformations are
+ * demonstrably permitted on this cloud. Non-Cloudinary remote hosts have no such lever and are
+ * probed as before.
+ *
+ * The health map stays keyed on the ORIGINAL url — only the bytes on the wire change.
+ */
+function probeUrlFor(url: string): string {
+  return isCloudinaryUrl(url) ? cldUrl(url, { width: 1, height: 1, crop: "fill" }) : url;
 }
 
 /** Current known health of a URL. Never triggers a probe. */
@@ -75,7 +101,7 @@ export function probeImage(url: string, onChange?: (url: string) => void): void 
     onChange?.(url);
   };
 
-  img.src = url;
+  img.src = probeUrlFor(url);
 }
 
 /** Every URL confirmed broken this session — surfaced by Diagnostics. */

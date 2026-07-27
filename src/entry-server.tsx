@@ -5,6 +5,10 @@ import { memoryLocation } from "wouter/memory-location";
 import { HelmetServerState } from "react-helmet-async";
 import App from "./App";
 
+// Re-exported so `scripts/prerender.mjs` can fetch exactly the sections the public site reads,
+// without duplicating the list in a second place where it could drift.
+export { PUBLIC_SECTIONS } from "@/domains/cms/constants";
+
 interface RenderResult {
   html: string;
   head: string;

@@ -28,6 +28,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       unsubscribe = authService.onAuthStateChange((user) => {
         setCurrentUser(user);
         setLoading(false);
+        // Push identity to the Firestore diagnostics logger. It no longer imports the auth module
+        // itself, because doing so booted the whole Firebase Auth stack on public pages.
+        import("@/services/firestore/firestoreDiagnostics").then((m) =>
+          m.setDiagnosticsUser(user ? { uid: user.uid, email: user.email } : null)
+        );
       });
     });
 
@@ -65,10 +70,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
  * Custom hook to consume the AuthContext safely from any component.
  * @throws {Error} If called outside of `<AuthProvider>`
  */
+/**
+ * Anonymous default used when no <AuthProvider> is mounted.
+ *
+ * Public marketing routes deliberately render without one — initialising Firebase Auth there pulls
+ * `firebaseapp.com/__/auth/iframe.js` (95 KB) and a follow-up `googleapis.com/…/getProjectConfig`
+ * call, which Lighthouse measured as the single LONGEST critical request chain on `/`
+ * (`network-dependency-tree-insight`: document → iframe.js @2,755 ms → getProjectConfig @3,909 ms,
+ * both flagged `isLongest`). None of it is needed by a visitor who never signs in.
+ *
+ * Mirrors the existing `useAnimationCapability` pattern in this codebase: degrade to a conservative
+ * value rather than throw, so a component is safe to render inside or outside the provider.
+ */
+const ANONYMOUS_AUTH: AuthContextType = {
+  currentUser: null,
+} as AuthContextType;
+
 export function useAuth(): AuthContextType {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
-  return context;
+  return useContext(AuthContext) ?? ANONYMOUS_AUTH;
 }

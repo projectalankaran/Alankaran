@@ -1,4 +1,16 @@
-import { auth } from "@/lib/firebase";
+// NOTE: deliberately does NOT import `@/lib/firebase`'s `auth`.
+//
+// That module calls `getAuth(app)` at module scope, so merely importing it boots Firebase Auth —
+// which fetches `firebaseapp.com/__/auth/iframe.js` (93 KB), `apis.google.com` gapi (41 KB) and an
+// `identitytoolkit/getProjectConfig` round trip. Because `firestore.service` imports this file, and
+// `SiteContentProvider` lazy-imports that service, every anonymous visitor to a public marketing
+// page was booting the entire auth stack purely so this module could log a UID.
+//
+// Lighthouse measured that chain as the LONGEST critical request chain on `/`
+// (`network-dependency-tree-insight`: document → iframe.js @2,755 ms → getProjectConfig @3,909 ms).
+//
+// The identity is now pushed in by `AuthProvider` when it exists. Public pages have no provider, so
+// this correctly reports "anonymous" — which is exactly what the security rules see for them.
 import { firebaseConfig } from "@/config/firebase";
 import type { FirestoreDocumentPath } from "./firestorePaths";
 
@@ -44,13 +56,23 @@ export function formatPath(target: FirestoreDocumentPath | string): string {
   return typeof target === "string" ? `${target}/*` : `${target.collection}/${target.docId}`;
 }
 
+/**
+ * Identity for diagnostics, pushed in by `AuthProvider`. Null until an auth stack actually exists,
+ * which on public routes is never — see the import note above.
+ */
+let diagnosticsUser: { uid: string; email: string | null } | null = null;
+
+/** Called by `AuthProvider` on every auth state change. No-op on public routes. */
+export function setDiagnosticsUser(user: { uid: string; email: string | null } | null): void {
+  diagnosticsUser = user;
+}
+
 /** Current auth identity as the security rules see it. */
 export function getAuthContext(): { uid: string | null; email: string | null; signedIn: boolean } {
-  const user = auth.currentUser;
   return {
-    uid: user?.uid ?? null,
-    email: user?.email ?? null,
-    signedIn: Boolean(user),
+    uid: diagnosticsUser?.uid ?? null,
+    email: diagnosticsUser?.email ?? null,
+    signedIn: Boolean(diagnosticsUser),
   };
 }
 

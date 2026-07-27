@@ -38,11 +38,16 @@ const PROBE = `
 <script>
 (function () {
   var lcp = null;
+  var candidates = [];
   new PerformanceObserver(function (l) {
-    var es = l.getEntries(); var e = es[es.length - 1];
-    lcp = { url: e.url || null, tag: e.element ? e.element.tagName : null,
-            cls: e.element ? (e.element.className || '').toString().slice(0, 60) : null,
-            time: Math.round(e.startTime), size: e.size };
+    l.getEntries().forEach(function (e) {
+      var rec = { url: e.url || null, tag: e.element ? e.element.tagName : null,
+                  cls: e.element ? (e.element.className || '').toString().slice(0, 70) : null,
+                  currentSrc: (e.element && e.element.currentSrc) ? e.element.currentSrc : null,
+                  time: Math.round(e.startTime), size: e.size };
+      candidates.push(rec);
+      lcp = rec;
+    });
   }).observe({ type: 'largest-contentful-paint', buffered: true });
 
   var shifts = 0;
@@ -58,7 +63,7 @@ const PROBE = `
         return { n: r.name.replace(location.origin, ''), t: Math.round(r.startTime),
                  b: r.transferSize, k: r.initiatorType };
       }).sort(function (a, b) { return a.t - b.t; });
-      var out = { fcp: fcp ? Math.round(fcp.startTime) : null, lcp: lcp, cls: +shifts.toFixed(4),
+      var out = { fcp: fcp ? Math.round(fcp.startTime) : null, lcp: lcp, candidates: candidates, cls: +shifts.toFixed(4),
                   dpr: window.devicePixelRatio, vw: innerWidth,
                   heroCurrentSrc: img ? img.currentSrc.replace(location.origin, '') : null,
                   rootChildren: document.getElementById('root').childElementCount,
@@ -119,6 +124,10 @@ console.log(`  LCP element   ${r.lcp?.tag ?? '?'}  ${r.lcp?.cls ? '.' + r.lcp.cl
 console.log(`  LCP resource  ${r.lcp?.url?.replace(`http://127.0.0.1:${PORT}`, '') ?? '(text)'}`)
 console.log(`  hero currentSrc  ${r.heroCurrentSrc ?? '(none)'}`)
 console.log(`  CLS           ${r.cls}`)
+console.log(`\n  ── EVERY LCP CANDIDATE (each one resets LCP) ──`)
+for (const c of r.candidates || []) {
+  console.log(`   t=${String(c.time).padStart(6)}ms size=${String(c.size).padStart(7)} <${c.tag}> ${(c.currentSrc || c.url || '(text)').replace(/^https?:\/\/[^/]+/, '')}`)
+}
 
 const kb = (b) => (b / 1024).toFixed(1).padStart(7)
 console.log(`\n  ${'#'.padEnd(3)}${'start'.padStart(6)}  ${'KB'.padStart(7)}  kind        resource`)

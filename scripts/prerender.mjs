@@ -8,7 +8,124 @@ const toAbsolute = (p) => path.resolve(__dirname, '..', p)
 const template = fs.readFileSync(toAbsolute('dist/static/index.html'), 'utf-8')
 const serverAssetsDir = toAbsolute('dist/server/assets')
 const entryFile = fs.readdirSync(serverAssetsDir).find(f => f.startsWith('entry-server') && f.endsWith('.js'))
-const { render } = await import(`file://${path.join(serverAssetsDir, entryFile)}`)
+const { render, PUBLIC_SECTIONS } = await import(`file://${path.join(serverAssetsDir, entryFile)}`)
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Build-time CMS snapshot
+//
+// The public site reads `cmsSiteContent/*` anonymously (firestore.rules: `allow read: if true`),
+// so the build can read exactly what a visitor would. Capturing it here and embedding it in the
+// prerendered HTML removes the CMS from the LCP critical path entirely — see the long note on
+// `readBuildSnapshot` in SiteContentProvider.tsx for the measurements that motivated this.
+//
+// Degrades to `{}` on any failure (offline build, missing env, Firestore outage). That reproduces
+// exactly the previous behaviour — bundled fallbacks + runtime sync — so a build never breaks
+// because the CMS was briefly unreachable.
+// ─────────────────────────────────────────────────────────────────────────────
+function loadEnv() {
+  const env = { ...process.env }
+  for (const file of ['.env.local', '.env']) {
+    const p = toAbsolute(file)
+    if (!fs.existsSync(p)) continue
+    for (const line of fs.readFileSync(p, 'utf-8').split('\n')) {
+      const m = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/)
+      if (m && !env[m[1]]) env[m[1]] = m[2].replace(/^["']|["']$/g, '')
+    }
+  }
+  return env
+}
+
+async function fetchCmsSnapshot() {
+  const env = loadEnv()
+  const cfg = {
+    apiKey: env.VITE_FIREBASE_API_KEY,
+    authDomain: env.VITE_FIREBASE_AUTH_DOMAIN,
+    projectId: env.VITE_FIREBASE_PROJECT_ID,
+    storageBucket: env.VITE_FIREBASE_STORAGE_BUCKET,
+    messagingSenderId: env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+    appId: env.VITE_FIREBASE_APP_ID,
+  }
+  if (!cfg.projectId || !cfg.apiKey) {
+    console.warn('prerender: no Firebase config — building with bundled fallbacks (runtime sync unchanged)')
+    return {}
+  }
+
+  try {
+    const { initializeApp } = await import('firebase/app')
+    const { getFirestore, doc, getDoc } = await import('firebase/firestore')
+    // DEFAULT app, not a named one. With the snapshot seeded, SSR now walks code paths that were
+    // previously dead (they bailed out on empty `sections`), and some of those call `getFirestore()`
+    // against the default app. A named-only app made that throw `app/no-app` mid-prerender.
+    const app = initializeApp(cfg)
+    const db = getFirestore(app)
+
+    const sections = Array.from(new Set(PUBLIC_SECTIONS))
+    const snapshot = {}
+    await Promise.all(sections.map(async (key) => {
+      try {
+        const snap = await getDoc(doc(db, 'cmsSiteContent', key))
+        if (!snap.exists()) return
+        const d = snap.data()
+        // Same sanitisation `loadSections` applies at runtime, so the seeded state is
+        // shape-identical to what the background sync will later produce.
+        snapshot[key] = pruneSection({ sectionKey: d.sectionKey || key, ...d })
+      } catch { /* one bad section must not fail the build */ }
+    }))
+
+    return snapshot
+  } catch (err) {
+    console.warn('prerender: CMS snapshot unavailable —', err.message)
+    return {}
+  }
+}
+
+/**
+ * Strips slot metadata the public renderer never reads.
+ *
+ * This payload is inlined into EVERY prerendered route, so its size is paid on the critical path —
+ * the whole point of the snapshot is to make LCP cheaper, and an unpruned one (measured: 66.8 KB)
+ * would hand a chunk of that saving straight back.
+ *
+ * Only slot maps are pruned. Section-level fields are left untouched so `selectPublicSlotMap` and
+ * `resolvePublicationState` keep seeing the exact document shape they expect — publication state is
+ * subtle enough that an allowlist there would be a correctness risk for a few hundred bytes.
+ */
+const PUBLIC_SLOT_FIELDS = [
+  'url', 'altText', 'cloudinaryId', 'slotName', 'caption', 'category', 'order', 'visibility', 'isDeleted',
+]
+
+function pruneSlotMap(map) {
+  if (!map || typeof map !== 'object') return map
+  const out = {}
+  for (const [name, slot] of Object.entries(map)) {
+    if (!slot || typeof slot !== 'object') { out[name] = slot; continue }
+    const kept = {}
+    for (const f of PUBLIC_SLOT_FIELDS) if (slot[f] !== undefined) kept[f] = slot[f]
+    out[name] = kept
+  }
+  return out
+}
+
+function pruneSection(section) {
+  const out = { ...section }
+  if (out.slots) out.slots = pruneSlotMap(out.slots)
+  if (out.publishedSlots) out.publishedSlots = pruneSlotMap(out.publishedSlots)
+  return out
+}
+
+const cmsSnapshot = await fetchCmsSnapshot()
+const snapshotJson = JSON.stringify(cmsSnapshot)
+// Server-side: seed the same global the client will read, so `render()` resolves CMS URLs.
+globalThis.__CMS_SNAPSHOT__ = cmsSnapshot
+console.log(
+  `prerender: CMS snapshot ${Object.keys(cmsSnapshot).length} sections, ${(Buffer.byteLength(snapshotJson) / 1024).toFixed(1)} KB`
+)
+
+// `</script>` inside embedded JSON would terminate the tag early; escaping `<` is the standard guard.
+const snapshotTag =
+  Object.keys(cmsSnapshot).length > 0
+    ? `<script>window.__CMS_SNAPSHOT__=${snapshotJson.replace(/</g, '\\u003c')}</script>`
+    : ''
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Document-head assembly
@@ -213,9 +330,13 @@ const BASE_URL = 'https://alankaran.com';
     // The image preload goes immediately before the entry module script — i.e. straight after the
     // stylesheet, which `orderCriticalPath()` in vite.config.ts has already hoisted to that spot.
     // That places the LCP hint ahead of every module preload in document order.
+    // Order matters: LCP preload, then the snapshot, then the entry module. The snapshot must be
+    // evaluated before the module runs so the client seeds `sections` synchronously and hydration
+    // matches the server render. It is a tiny inline script, so it costs no request and cannot
+    // block the preload above it.
     head = head.replace(
       /(<script[^>]*type="module"[^>]*><\/script>)/,
-      `${headExtras}\n    $1`
+      `${headExtras}\n    ${snapshotTag}\n    $1`
     )
 
     html = head + rest

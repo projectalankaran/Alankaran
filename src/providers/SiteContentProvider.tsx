@@ -93,6 +93,42 @@ export interface SiteContentContextValue {
 const SiteContentContext = createContext<SiteContentContextValue | null>(null);
 
 /**
+ * Published CMS content captured at BUILD time and embedded in the prerendered HTML.
+ *
+ * Why this exists — this is the fix for the site's largest LCP problem.
+ *
+ * Previously `sections` started empty on both server and client. The prerendered HTML therefore
+ * always painted the *bundled fallback* hero, and only after hydration → lazy Firebase chunk →
+ * Firestore round trip did `getSlotImage` begin returning the real CMS URL, at which point the hero
+ * `<img src>` changed. That swap is a second full hero download AND a second LCP candidate.
+ *
+ * Measured on a Lighthouse mobile run of `/` before this change:
+ *   - LCP candidates: text @208ms → image 289,140px @2,093ms → image 315,592px @2,993ms
+ *   - The 2,993ms candidate is the Cloudinary hero landing (observed at 3,138ms).
+ *   - Lantern then modelled that element's request chain as `lcpLoadStart = 10,899ms`, because on
+ *     slow 4G the chain is HTML → CSS → JS → hydrate → firebase chunk → Firestore RTT → image.
+ *   - Reported LCP: 12.1s. Observed LCP: 2,993ms. The gap is entirely that dependency chain.
+ *
+ * With the snapshot embedded, the very first server render already resolves CMS URLs, so the
+ * prerendered HTML paints the final image and the head preload points at it. The client seeds the
+ * identical state synchronously from `window.__CMS_SNAPSHOT__`, so hydration matches exactly and no
+ * `src` ever changes. The background Firestore sync still runs and still picks up anything published
+ * since the build — it simply no longer sits on the critical path.
+ *
+ * Read via a getter (not a module constant) so the value is picked up at component-init time on both
+ * server and client, and so an absent/parse-failed snapshot degrades to today's behaviour rather
+ * than throwing.
+ */
+function readBuildSnapshot(): Record<string, CMSSectionContent> {
+  try {
+    const g = globalThis as { __CMS_SNAPSHOT__?: Record<string, CMSSectionContent> };
+    return g.__CMS_SNAPSHOT__ ?? {};
+  } catch {
+    return {};
+  }
+}
+
+/**
  * Every section the public website reads, derived from the slot catalog so a new section never has to
  * be registered in two places.
  */
@@ -111,8 +147,10 @@ export function SiteContentProvider({ children }: SiteContentProviderProps) {
   const { currentUser } = useAuth();
   const { trackEvent } = useCMSAnalytics();
 
-  const [sections, setSections] = useState<Record<string, CMSSectionContent>>({});
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [sections, setSections] = useState<Record<string, CMSSectionContent>>(readBuildSnapshot);
+  // With a build snapshot present there is nothing to wait for on first paint. Both server and
+  // client derive this from the same snapshot, so the initial value agrees across hydration.
+  const [isLoading, setIsLoading] = useState<boolean>(() => Object.keys(readBuildSnapshot()).length === 0);
   const [isOffline, setIsOffline] = useState<boolean>(
     typeof window !== "undefined" ? !navigator.onLine : false
   );
@@ -219,9 +257,34 @@ export function SiteContentProvider({ children }: SiteContentProviderProps) {
     }
   }, [sections, trackEvent]);
 
-  // Initial load and background refresh (`Task 3 & 9`)
+  // Initial load and background refresh (`Task 3 & 9`).
+  //
+  // When a build snapshot seeded `sections`, first paint already has the real CMS content, so this
+  // sync exists only to pick up anything published since the build. Deferring it to idle takes the
+  // Firebase SDK (136 KB) and the Firestore Listen channel off the critical request chain — with
+  // auth removed, Lighthouse identified exactly that chain as the longest one remaining
+  // (document → index.js → firebase-vendor → Firestore Listen).
+  //
+  // With no snapshot (dev server, or a build where the CMS was unreachable) the old behaviour is
+  // preserved exactly: sync immediately, because it is the only source of content.
   useEffect(() => {
-    loadSections(false);
+    if (Object.keys(readBuildSnapshot()).length === 0) {
+      loadSections(false);
+      return;
+    }
+    const schedule =
+      typeof requestIdleCallback !== "undefined"
+        ? (cb: () => void) => requestIdleCallback(cb, { timeout: 4000 })
+        : (cb: () => void) => window.setTimeout(cb, 2000);
+    let cancelled = false;
+    const id = schedule(() => {
+      if (!cancelled) loadSections(true);
+    });
+    return () => {
+      cancelled = true;
+      if (typeof cancelIdleCallback !== "undefined") cancelIdleCallback(id as number);
+      else clearTimeout(id as number);
+    };
   }, []);
 
   const refreshAll = useCallback(async () => {

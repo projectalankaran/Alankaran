@@ -19,6 +19,7 @@
  */
 
 import manifest from "@/generated/imageManifest.json";
+import { isCloudinaryUrl, cldUrl } from "@/utils/cloudinaryImage";
 
 interface ManifestEntry {
   /** Basename, used to rebuild variant URLs by convention. */
@@ -93,13 +94,25 @@ export function hasLocalVariants(src: string | undefined | null): boolean {
  * `width` should be the largest CSS width the element occupies, times its expected DPR. 768 covers
  * a full-width card on a 2x phone and any multi-column card on desktop.
  *
- * Non-manifest URLs (Cloudinary, remote hosts) are returned untouched, so this is safe to apply
- * uniformly without inspecting each call site.
+ * Handles BOTH asset sources, because a CMS-backed background is the common case in production:
+ * bundled paths resolve against the build manifest, Cloudinary URLs get an equivalent CDN transform.
+ * Passing a Cloudinary URL through untouched — as an earlier version of this helper did — resolves
+ * to the full-resolution original; measured at 1,672 KB across seven gallery backgrounds on `/`.
+ * Anything else (a remote host, a data URI) is returned unchanged.
  */
 export function localBackgroundUrl(src: string | undefined | null, width = 768): string {
   if (!src) return "";
+
   const entry = MANIFEST[src];
-  if (!entry) return src;
-  const chosen = entry.s.find((w) => w >= width) ?? entry.s[entry.s.length - 1];
-  return variantUrl(entry.n, chosen, "webp");
+  if (entry) {
+    const chosen = entry.s.find((w) => w >= width) ?? entry.s[entry.s.length - 1];
+    return variantUrl(entry.n, chosen, "webp");
+  }
+
+  // CMS-managed background → same width cap, delivered by the CDN. `f_auto` is intentional even
+  // though a bare CSS `url()` performs no format negotiation: Cloudinary negotiates server-side
+  // from the Accept header, so this is safe here in a way that a static `.avif` path would not be.
+  if (isCloudinaryUrl(src)) return cldUrl(src, { width, crop: "limit" });
+
+  return src;
 }

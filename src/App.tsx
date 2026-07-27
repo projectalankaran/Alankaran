@@ -86,6 +86,13 @@ function MainContent({ showWhatsApp }: { showWhatsApp: boolean }) {
   const [location] = useLocation();
   const isAdminRoute = location.startsWith("/admin");
 
+  // Starts false on server AND on the client's first render, so hydration matches; flips only for
+  // an already-signed-in admin, after mount.
+  const [needsAuth, setNeedsAuth] = useState(false);
+  useEffect(() => {
+    if (hasPersistedAdminSession()) setNeedsAuth(true);
+  }, []);
+
   // Scope the CMS "cms-theme" palette to the admin area only. Toggling the class
   // on <body> (not a nested div) means Radix modals — which portal to
   // document.body — also inherit the espresso/ivory tokens, while the public
@@ -106,19 +113,40 @@ function MainContent({ showWhatsApp }: { showWhatsApp: boolean }) {
     );
   }
 
-  return (
-    <AuthProvider>
-      <SiteContentProvider>
-        <SiteErrorBoundary>
-          <ScrollToTop />
-          <Navbar />
-          <Router />
-          <FloatingCTA />
-          {showWhatsApp && <WhatsAppButton />}
-        </SiteErrorBoundary>
-      </SiteContentProvider>
-    </AuthProvider>
+  const publicTree = (
+    <SiteContentProvider>
+      <SiteErrorBoundary>
+        <ScrollToTop />
+        <Navbar />
+        <Router />
+        <FloatingCTA />
+        {showWhatsApp && <WhatsAppButton />}
+      </SiteErrorBoundary>
+    </SiteContentProvider>
   );
+
+  // Anonymous visitors get NO auth stack at all — see the note on ANONYMOUS_AUTH in AuthContext.
+  // A signed-in admin still gets the real provider so CMS Preview Mode keeps working; that is
+  // decided after mount (never during the first render) so the server and client render the same
+  // tree and hydration stays byte-identical.
+  return needsAuth ? <AuthProvider>{publicTree}</AuthProvider> : publicTree;
+}
+
+/**
+ * True only when this browser already holds a persisted Firebase session — i.e. an admin. Firebase
+ * Auth writes `firebase:authUser:<apiKey>:[DEFAULT]` to localStorage, so this is a synchronous,
+ * network-free check. Anonymous visitors (including Lighthouse) never match.
+ */
+function hasPersistedAdminSession(): boolean {
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith("firebase:authUser:")) return true;
+    }
+  } catch {
+    /* storage disabled — treat as anonymous */
+  }
+  return false;
 }
 
 function App({ helmetContext, isServer = false }: { helmetContext?: any, isServer?: boolean }) {
