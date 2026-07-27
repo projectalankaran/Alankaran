@@ -1,4 +1,5 @@
 import { Link } from "wouter";
+import { localBackgroundUrl } from "@/utils/localImage";
 import { m } from "framer-motion";
 import Footer from "@/components/Footer";
 import SEO from "@/components/SEO";
@@ -130,7 +131,6 @@ export default function WeddingStories() {
       <SEO
         title="Real Wedding Stories"
         description="Read the real wedding stories of couples who celebrated their love with Alankaran's luxury planning and styling."
-        preloadImage={heroImage}
       />
       {/* Hero */}
       <section className="relative h-[65vh] flex items-end pb-20 overflow-hidden">
@@ -175,7 +175,7 @@ export default function WeddingStories() {
                 </div>
               </div>
               <div className="overflow-hidden group glass-card">
-                <div className="aspect-[16/9] transition-transform duration-700 group-hover:scale-105" style={{ backgroundImage: `url(${s.img[0]})`, backgroundSize: "cover", backgroundPosition: "center" }} />
+                <div className="aspect-[16/9] transition-transform duration-700 group-hover:scale-105" style={{ backgroundImage: `url(${localBackgroundUrl(s.img[0])})`, backgroundSize: "cover", backgroundPosition: "center" }} />
               </div>
             </div>
 
@@ -191,14 +191,14 @@ export default function WeddingStories() {
             {/* Image grid */}
             <div className="grid grid-cols-3 gap-3">
               <div className="col-span-2 overflow-hidden group">
-                <div className="w-full h-full aspect-[16/9] transition-transform duration-700 group-hover:scale-105" style={{ backgroundImage: `url(${s.img[1]})`, backgroundSize: "cover", backgroundPosition: "center" }} />
+                <div className="w-full h-full aspect-[16/9] transition-transform duration-700 group-hover:scale-105" style={{ backgroundImage: `url(${localBackgroundUrl(s.img[1])})`, backgroundSize: "cover", backgroundPosition: "center" }} />
               </div>
               <div className="space-y-3 flex flex-col">
                 <div className="overflow-hidden group flex-1">
-                  <div className="w-full h-full min-h-[150px] transition-transform duration-700 group-hover:scale-105" style={{ backgroundImage: `url(${s.img[2]})`, backgroundSize: "cover", backgroundPosition: "center" }} />
+                  <div className="w-full h-full min-h-[150px] transition-transform duration-700 group-hover:scale-105" style={{ backgroundImage: `url(${localBackgroundUrl(s.img[2])})`, backgroundSize: "cover", backgroundPosition: "center" }} />
                 </div>
                 <div className="overflow-hidden group flex-1">
-                  <div className="w-full h-full min-h-[150px] transition-transform duration-700 group-hover:scale-105" style={{ backgroundImage: `url(${s.img[3]})`, backgroundSize: "cover", backgroundPosition: "center" }} />
+                  <div className="w-full h-full min-h-[150px] transition-transform duration-700 group-hover:scale-105" style={{ backgroundImage: `url(${localBackgroundUrl(s.img[3])})`, backgroundSize: "cover", backgroundPosition: "center" }} />
                 </div>
               </div>
             </div>

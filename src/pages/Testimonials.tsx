@@ -52,7 +52,6 @@ export default function Testimonials() {
       <SEO
         title="Client Testimonials"
         description="Hear from our couples. Read testimonials and reviews about Alankaran's luxury wedding planning and decor services."
-        preloadImage={heroBg}
       />
       {/* Hero */}
       <section className="relative h-[55vh] flex items-end pb-20 overflow-hidden">

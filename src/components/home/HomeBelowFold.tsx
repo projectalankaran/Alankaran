@@ -1,4 +1,6 @@
 import { Link } from "wouter";
+import { localBackgroundUrl } from "@/utils/localImage";
+import { OptimizedImage } from "@/components/common/OptimizedImage";
 import { m, AnimatePresence, type TargetAndTransition } from "framer-motion";
 import { useSiteContent } from "@/providers/SiteContentProvider";
 import { useAnimationCapability } from "@/providers/AnimationProvider";
@@ -39,11 +41,10 @@ const testimonials = [
 function WeddingImage({ image, aspectClass = "aspect-[4/5]", label = "" }: { image: string; aspectClass?: string; label?: string }) {
   return (
     <div className={`group ${aspectClass} relative overflow-hidden rounded-2xl border border-gold/15 shadow-sm hover:shadow-xl hover:shadow-gold/10 transition-all duration-700 bg-muted`}>
-      <img width="800" height="1000"
+      <OptimizedImage sizes="(min-width: 768px) 50vw, 100vw" fade={false} width="800" height="1000"
         src={image}
         alt={label || "Wedding Decor"}
         className="absolute inset-0 w-full h-full object-cover transition-transform duration-[1.6s] cubic-bezier(0.16, 1, 0.3, 1) group-hover:scale-105"
-        loading="lazy"
         decoding="async"
       />
       <div className="absolute inset-3 border border-gold/10 pointer-events-none rounded-xl z-10 transition-all duration-700 group-hover:border-gold/30 group-hover:inset-4" />
@@ -210,7 +211,7 @@ export default function HomeBelowFold({ pulseHighlight }: { pulseHighlight: bool
                 </div>
                 <div
                   className="w-full aspect-[4/3] mb-4 relative z-10"
-                  style={{ backgroundImage: `url(${images[i % images.length]})`, backgroundSize: "cover", backgroundPosition: "center" }}
+                  style={{ backgroundImage: `url(${localBackgroundUrl(images[i % images.length])})`, backgroundSize: "cover", backgroundPosition: "center" }}
                 />
                 <h3 className="font-serif text-lg mb-2 text-foreground">{s.name}</h3>
                 <p className="text-body text-[13px]">
@@ -283,7 +284,7 @@ export default function HomeBelowFold({ pulseHighlight }: { pulseHighlight: bool
               >
                 <div
                   className="aspect-[3/4] relative overflow-hidden"
-                  style={{ backgroundImage: `url(${images[(i + 2) % images.length]})`, backgroundSize: "cover", backgroundPosition: "center" }}
+                  style={{ backgroundImage: `url(${localBackgroundUrl(images[(i + 2) % images.length])})`, backgroundSize: "cover", backgroundPosition: "center" }}
                 >
                   <div
                     className="absolute inset-0 flex flex-col justify-end p-6"
@@ -335,7 +336,7 @@ export default function HomeBelowFold({ pulseHighlight }: { pulseHighlight: bool
                 style={{ width: 260, height: 260, top: "50%", left: "50%", x: "-50%", y: "-50%" }}
                 {...float({ y: ["-52%", "-48%", "-52%"] }, 6)}
               >
-                <img width="800" height="1000" src={images[0]} alt="Royal mandap" className="w-full h-full object-cover" decoding="async" loading="lazy" />
+                <OptimizedImage sizes="(min-width: 768px) 50vw, 100vw" fade={false} width="800" height="1000" src={images[0]} alt="Royal mandap" className="w-full h-full object-cover" decoding="async" />
               </m.div>
 
               {/* Top-right medium circle */}
@@ -344,7 +345,7 @@ export default function HomeBelowFold({ pulseHighlight }: { pulseHighlight: bool
                 style={{ width: 150, height: 150, top: "4%", right: "4%" }}
                 {...float({ y: [0, -12, 0] }, 5, 0.8)}
               >
-                <img width="800" height="1000" src={images[2]} alt="Mughal garden" className="w-full h-full object-cover" decoding="async" loading="lazy" />
+                <OptimizedImage sizes="(min-width: 768px) 50vw, 100vw" fade={false} width="800" height="1000" src={images[2]} alt="Mughal garden" className="w-full h-full object-cover" decoding="async" />
               </m.div>
 
               {/* Bottom-left small circle */}
@@ -353,7 +354,7 @@ export default function HomeBelowFold({ pulseHighlight }: { pulseHighlight: bool
                 style={{ width: 110, height: 110, bottom: "8%", left: "8%" }}
                 {...float({ y: [0, 10, 0] }, 4.5, 1.2)}
               >
-                <img width="800" height="1000" src={images[4]} alt="Bridal entry" className="w-full h-full object-cover" decoding="async" loading="lazy" />
+                <OptimizedImage sizes="(min-width: 768px) 50vw, 100vw" fade={false} width="800" height="1000" src={images[4]} alt="Bridal entry" className="w-full h-full object-cover" decoding="async" />
               </m.div>
 
               {/* Bottom-right small circle */}
@@ -362,7 +363,7 @@ export default function HomeBelowFold({ pulseHighlight }: { pulseHighlight: bool
                 style={{ width: 90, height: 90, bottom: "14%", right: "10%" }}
                 {...float({ y: [0, -8, 0] }, 5.5, 0.3)}
               >
-                <img width="800" height="1000" src={images[5]} alt="Engagement decor" className="w-full h-full object-cover" decoding="async" loading="lazy" />
+                <OptimizedImage sizes="(min-width: 768px) 50vw, 100vw" fade={false} width="800" height="1000" src={images[5]} alt="Engagement decor" className="w-full h-full object-cover" decoding="async" />
               </m.div>
 
               {/* Top-left tiny accent circle */}
@@ -371,7 +372,7 @@ export default function HomeBelowFold({ pulseHighlight }: { pulseHighlight: bool
                 style={{ width: 68, height: 68, top: "16%", left: "6%" }}
                 {...float({ y: [0, 7, 0] }, 4, 2)}
               >
-                <img width="800" height="1000" src={images[7]} alt="Floral detail" className="w-full h-full object-cover" decoding="async" loading="lazy" />
+                <OptimizedImage sizes="(min-width: 768px) 50vw, 100vw" fade={false} width="800" height="1000" src={images[7]} alt="Floral detail" className="w-full h-full object-cover" decoding="async" />
               </m.div>
 
               {/* Decorative gold ring behind main circle */}
@@ -394,11 +395,10 @@ export default function HomeBelowFold({ pulseHighlight }: { pulseHighlight: bool
           <div className="grid grid-cols-1 md:grid-cols-3 md:grid-rows-4 gap-4 md:gap-6 h-auto md:h-[800px] lg:h-[950px] xl:h-[1050px] w-full">
             {/* Item 1: Wide landscape (Row 1-2, Col 1-2) */}
             <div className="md:col-span-2 md:row-span-2 relative overflow-hidden rounded-2xl group shadow-sm bg-muted aspect-[16/10] md:aspect-auto">
-              <img width="800" height="1000"
+              <OptimizedImage sizes="(min-width: 768px) 50vw, 100vw" fade={false} width="800" height="1000"
                 src={images[1]}
                 alt="Luxury wedding moment"
                 className="absolute inset-0 w-full h-full object-cover transition-transform duration-[1.2s] ease-out group-hover:scale-105"
-                loading="lazy"
               decoding="async" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-end p-6">
                 <span className="font-sans font-medium text-xs tracking-widest text-white uppercase">Romantic Symphony</span>
@@ -407,11 +407,10 @@ export default function HomeBelowFold({ pulseHighlight }: { pulseHighlight: bool
 
             {/* Item 2: Small landscape (Row 1, Col 3) */}
             <div className="md:col-span-1 md:row-span-1 relative overflow-hidden rounded-2xl group shadow-sm bg-muted aspect-[4/3] md:aspect-auto">
-              <img width="800" height="1000"
+              <OptimizedImage sizes="(min-width: 768px) 50vw, 100vw" fade={false} width="800" height="1000"
                 src={images[2]}
                 alt="Mughal garden wedding"
                 className="absolute inset-0 w-full h-full object-cover transition-transform duration-[1.2s] ease-out group-hover:scale-105"
-                loading="lazy"
               decoding="async" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-end p-4">
                 <span className="font-sans font-medium text-xs tracking-widest text-white uppercase">Mughal Majesty</span>
@@ -420,11 +419,10 @@ export default function HomeBelowFold({ pulseHighlight }: { pulseHighlight: bool
 
             {/* Item 3: Small landscape (Row 2, Col 3) */}
             <div className="md:col-span-1 md:row-span-1 relative overflow-hidden rounded-2xl group shadow-sm bg-muted aspect-[4/3] md:aspect-auto">
-              <img width="800" height="1000"
+              <OptimizedImage sizes="(min-width: 768px) 50vw, 100vw" fade={false} width="800" height="1000"
                 src={images[3]}
                 alt="Floral stage design"
                 className="absolute inset-0 w-full h-full object-cover transition-transform duration-[1.2s] ease-out group-hover:scale-105"
-                loading="lazy"
               decoding="async" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-end p-4">
                 <span className="font-sans font-medium text-xs tracking-widest text-white uppercase">Floral Splendor</span>
@@ -433,11 +431,10 @@ export default function HomeBelowFold({ pulseHighlight }: { pulseHighlight: bool
 
             {/* Item 4: Tall portrait (Row 3-4, Col 1) */}
             <div className="md:col-span-1 md:row-span-2 relative overflow-hidden rounded-2xl group shadow-sm bg-muted aspect-[3/4] md:aspect-auto">
-              <img width="800" height="1000"
+              <OptimizedImage sizes="(min-width: 768px) 50vw, 100vw" fade={false} width="800" height="1000"
                 src={mandapDetailImage}
                 alt="Mandap floral detail"
                 className="absolute inset-0 w-full h-full object-cover transition-transform duration-[1.2s] ease-out group-hover:scale-105"
-                loading="lazy"
               decoding="async" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-end p-6">
                 <span className="font-sans font-medium text-xs tracking-widest text-white uppercase">Sacred Spaces</span>
@@ -446,11 +443,10 @@ export default function HomeBelowFold({ pulseHighlight }: { pulseHighlight: bool
 
             {/* Item 5: Wide landscape (Row 3-4, Col 2-3) */}
             <div className="md:col-span-2 md:row-span-2 relative overflow-hidden rounded-2xl group shadow-sm bg-muted aspect-[16/10] md:aspect-auto">
-              <img width="800" height="1000"
+              <OptimizedImage sizes="(min-width: 768px) 50vw, 100vw" fade={false} width="800" height="1000"
                 src={images[0]}
                 alt="Royal mandap"
                 className="absolute inset-0 w-full h-full object-cover transition-transform duration-[1.2s] ease-out group-hover:scale-105"
-                loading="lazy"
               decoding="async" />
               <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-black/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500 flex items-end p-6">
                 <span className="font-sans font-medium text-xs tracking-widest text-white uppercase">The Grand Palace</span>
@@ -507,7 +503,7 @@ export default function HomeBelowFold({ pulseHighlight }: { pulseHighlight: bool
                 whileHover={{ y: -4, boxShadow: "0 0 20px rgba(212, 175, 55, 0.2)" }}
                 data-testid={`card-story-${i}`}
               >
-                <img width="800" height="1000" src={images[i % images.length]} alt={s.couple} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" loading="lazy" decoding="async" />
+                <OptimizedImage sizes="(min-width: 768px) 50vw, 100vw" fade={false} width="800" height="1000" src={images[i % images.length]} alt={s.couple} className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" decoding="async" />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent z-10" />
                 <div className="absolute bottom-0 left-0 w-full p-6 z-20">
                   <p className="section-label mb-2 text-gold/80">{s.date} — {s.location}</p>
@@ -549,11 +545,10 @@ export default function HomeBelowFold({ pulseHighlight }: { pulseHighlight: bool
                 whileHover={{ scale: 1.02 }}
                 data-testid={`card-reel-${i}`}
               >
-                <img width="800" height="1000"
+                <OptimizedImage sizes="(min-width: 768px) 50vw, 100vw" fade={false} width="800" height="1000"
                   src={src}
                   alt={`Cinematic wedding moment ${i + 1}`}
                   className="absolute inset-0 w-full h-full object-cover transition-transform duration-[1.5s] ease-out group-hover:scale-110"
-                  loading="lazy"
                 decoding="async" />
                 <div
                   className="absolute inset-0 transition-opacity duration-700 opacity-0 group-hover:opacity-100"

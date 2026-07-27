@@ -194,7 +194,18 @@ export default function DestinationWeddings() {
 
       {/* ── HERO ── */}
       <section className="relative min-h-[92vh] flex items-center overflow-hidden">
+        {/*
+          `data-lcp-bg` marks this as the route's LCP element.
+
+          A CSS background-image is invisible to the browser's preload scanner: it cannot be
+          discovered until the stylesheet has parsed AND the element has been laid out, which puts
+          it several steps further down the critical path than an <img> would be. `scripts/
+          prerender.mjs` reads this marker and emits a matching `<link rel="preload" as="image">`
+          into <head>, restoring parse-time discovery without altering a single pixel of the
+          existing background-cover rendering.
+        */}
         <div
+          data-lcp-bg
           className="absolute inset-0 z-0"
           style={{
             backgroundImage: `url(https://images.unsplash.com/photo-1519225421980-715cb0215aed?w=1600&q=85)`,

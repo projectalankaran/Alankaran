@@ -6,6 +6,7 @@ import { useSiteContent } from "@/providers/SiteContentProvider";
 import { heroImageUrl } from "@/utils/cloudinaryImage";
 import { useAnimationCapability } from "@/providers/AnimationProvider";
 import { useInViewport } from "@/hooks/useInViewport";
+import { OptimizedImage } from "@/components/common/OptimizedImage";
 
 const HeroCanvas = lazy(() => import("@/components/HeroCanvas"));
 
@@ -128,18 +129,39 @@ export default function HeroSection() {
               transition={{ duration: 1.5, ease: "easeInOut" }}
               className="absolute inset-0"
             >
-              {/* Cinematic Scale Zoom Animation */}
-              <m.img
-                src={landingSlides[currentLandingSlide].image}
-                alt="Alankaran Luxury Weddings"
+              {/*
+                Cinematic Ken Burns zoom.
+
+                The transform lives on this wrapper, never on the <img> itself. Two reasons:
+
+                1. The LCP element stays a plain native <img>, so its server-rendered markup and its
+                   first client render are byte-identical and hydration never has to patch it.
+                2. Framer writes the animated transform as an inline style. On the <img> that style
+                   differed between the SSR output (the animate target) and the first client render
+                   (the initial value) — a guaranteed hydration mismatch on the LCP element.
+
+                The zoom is gated on `allowMotion`, which is false on the server and false on the
+                first client render (the progressive animation engine only flips it at first idle).
+                Server and client therefore agree on "no transform", and the zoom begins after LCP
+                by construction rather than competing with it.
+              */}
+              <m.div
+                className="absolute inset-0"
                 initial={{ scale: 1 }}
-                animate={{ scale: 1.08 }}
+                animate={{ scale: allowMotion ? 1.08 : 1 }}
                 transition={{ duration: 5, ease: "linear" }}
-                className="w-full h-full object-cover"
-                fetchPriority={currentLandingSlide === 0 ? "high" : "auto"}
-                loading={currentLandingSlide === 0 ? "eager" : "lazy"}
-                decoding={currentLandingSlide === 0 ? "sync" : "async"}
-              />
+              >
+                <OptimizedImage
+                  src={landingSlides[currentLandingSlide].image}
+                  alt="Alankaran Luxury Weddings"
+                  fill
+                  sizes="100vw"
+                  priority={currentLandingSlide === 0}
+                  // The AnimatePresence wrapper above already crossfades between slides; a second
+                  // per-image fade would compound into a visibly slower reveal.
+                  fade={false}
+                />
+              </m.div>
             </m.div>
           </AnimatePresence>
           {mount3D && (

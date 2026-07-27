@@ -1,0 +1,192 @@
+{
+  "/images/bridal_entry.webp": {
+    "n": "bridal_entry",
+    "w": 1024,
+    "h": 1024,
+    "s": [
+      400,
+      640,
+      768,
+      960,
+      1024
+    ]
+  },
+  "/images/cinematic_floral_wedding.webp": {
+    "n": "cinematic_floral_wedding",
+    "w": 1024,
+    "h": 1024,
+    "s": [
+      400,
+      640,
+      768,
+      960,
+      1024
+    ]
+  },
+  "/images/coastal_sunset_wedding.webp": {
+    "n": "coastal_sunset_wedding",
+    "w": 1024,
+    "h": 1024,
+    "s": [
+      400,
+      640,
+      768,
+      960,
+      1024
+    ]
+  },
+  "/images/coastal_wedding.webp": {
+    "n": "coastal_wedding",
+    "w": 1024,
+    "h": 1024,
+    "s": [
+      400,
+      640,
+      768,
+      960,
+      1024
+    ]
+  },
+  "/images/engagement_decor.webp": {
+    "n": "engagement_decor",
+    "w": 1024,
+    "h": 1024,
+    "s": [
+      400,
+      640,
+      768,
+      960,
+      1024
+    ]
+  },
+  "/images/floral_detail.webp": {
+    "n": "floral_detail",
+    "w": 1024,
+    "h": 1024,
+    "s": [
+      400,
+      640,
+      768,
+      960,
+      1024
+    ]
+  },
+  "/images/floral_stage.webp": {
+    "n": "floral_stage",
+    "w": 1024,
+    "h": 1024,
+    "s": [
+      400,
+      640,
+      768,
+      960,
+      1024
+    ]
+  },
+  "/images/founders.webp": {
+    "n": "founders",
+    "w": 682,
+    "h": 1024,
+    "s": [
+      400,
+      640,
+      682
+    ]
+  },
+  "/images/gallery-royal-1.webp": {
+    "n": "gallery-royal-1",
+    "w": 896,
+    "h": 1280,
+    "s": [
+      400,
+      640,
+      768,
+      896
+    ]
+  },
+  "/images/grand_reception.webp": {
+    "n": "grand_reception",
+    "w": 1024,
+    "h": 1024,
+    "s": [
+      400,
+      640,
+      768,
+      960,
+      1024
+    ]
+  },
+  "/images/hero-couple.webp": {
+    "n": "hero-couple",
+    "w": 1024,
+    "h": 1024,
+    "s": [
+      400,
+      640,
+      768,
+      960,
+      1024
+    ]
+  },
+  "/images/hero-mandap.webp": {
+    "n": "hero-mandap",
+    "w": 1408,
+    "h": 768,
+    "s": [
+      400,
+      640,
+      768,
+      960,
+      1280,
+      1408
+    ]
+  },
+  "/images/mandap_floral_detail.webp": {
+    "n": "mandap_floral_detail",
+    "w": 1024,
+    "h": 1024,
+    "s": [
+      400,
+      640,
+      768,
+      960,
+      1024
+    ]
+  },
+  "/images/mughal_garden.webp": {
+    "n": "mughal_garden",
+    "w": 1024,
+    "h": 1024,
+    "s": [
+      400,
+      640,
+      768,
+      960,
+      1024
+    ]
+  },
+  "/images/royal_mandap.webp": {
+    "n": "royal_mandap",
+    "w": 1024,
+    "h": 1024,
+    "s": [
+      400,
+      640,
+      768,
+      960,
+      1024
+    ]
+  },
+  "/images/royal_palace_reception.webp": {
+    "n": "royal_palace_reception",
+    "w": 1024,
+    "h": 1024,
+    "s": [
+      400,
+      640,
+      768,
+      960,
+      1024
+    ]
+  }
+}

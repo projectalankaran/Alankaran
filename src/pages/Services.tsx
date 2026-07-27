@@ -1,4 +1,5 @@
 import { Link } from "wouter";
+import { localBackgroundUrl } from "@/utils/localImage";
 import { m } from "framer-motion";
 import Footer from "@/components/Footer";
 import SEO from "@/components/SEO";
@@ -97,7 +98,6 @@ export default function Services() {
       <SEO
         title="Signature Services"
         description="Explore our bespoke wedding planning, luxury floral styling, and mandap design services, crafted for your unique celebration."
-        preloadImage={heroImage}
         url="https://alankaran.com/services"
       />
       <StructuredData
@@ -148,7 +148,7 @@ export default function Services() {
               data-testid={`service-card-${i}`}
             >
               <div className="overflow-hidden aspect-[16/9]">
-                <div className="w-full h-full transition-transform duration-700 group-hover:scale-110" style={{ backgroundImage: `url(${cardImages[i]})`, backgroundSize: "cover", backgroundPosition: "center" }} />
+                <div className="w-full h-full transition-transform duration-700 group-hover:scale-110" style={{ backgroundImage: `url(${localBackgroundUrl(cardImages[i])})`, backgroundSize: "cover", backgroundPosition: "center" }} />
               </div>
               <div className="p-8">
                 <p className="section-label mb-3 text-gold/80 tracking-widest">{s.tag}</p>

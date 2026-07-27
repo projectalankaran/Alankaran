@@ -1,4 +1,5 @@
 import { Link } from "wouter";
+import { localBackgroundUrl } from "@/utils/localImage";
 import { m } from "framer-motion";
 import Footer from "@/components/Footer";
 import SEO from "@/components/SEO";
@@ -34,7 +35,6 @@ export default function About() {
       <SEO
         title="Our Story & Philosophy"
         description="Discover the philosophy behind Alankaran. We don't just decorate spaces—we compose immersive luxury wedding experiences rooted in Indian heritage."
-        preloadImage={heroImage}
         url="https://alankaran.com/about"
       />
       <StructuredData
@@ -77,10 +77,10 @@ export default function About() {
             </p>
           </div>
           <div className="space-y-4">
-            <div className="aspect-[4/3] gsap-reveal" style={{ backgroundImage: `url(${images[0]})`, backgroundSize: "cover", backgroundPosition: "center" }} />
+            <div className="aspect-[4/3] gsap-reveal" style={{ backgroundImage: `url(${localBackgroundUrl(images[0])})`, backgroundSize: "cover", backgroundPosition: "center" }} />
             <div className="grid grid-cols-2 gap-4 gsap-reveal">
-              <div className="aspect-square" style={{ backgroundImage: `url(${images[1]})`, backgroundSize: "cover", backgroundPosition: "center" }} />
-              <div className="aspect-square" style={{ backgroundImage: `url(${images[2]})`, backgroundSize: "cover", backgroundPosition: "center" }} />
+              <div className="aspect-square" style={{ backgroundImage: `url(${localBackgroundUrl(images[1])})`, backgroundSize: "cover", backgroundPosition: "center" }} />
+              <div className="aspect-square" style={{ backgroundImage: `url(${localBackgroundUrl(images[2])})`, backgroundSize: "cover", backgroundPosition: "center" }} />
             </div>
           </div>
         </section>
@@ -131,7 +131,7 @@ export default function About() {
         {/* Heritage */}
         <section className="py-16 mb-24 grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
           <div className="aspect-[3/4] overflow-hidden glass-card p-2">
-            <div className="w-full h-full" style={{ backgroundImage: `url(${images[3]})`, backgroundSize: "cover", backgroundPosition: "center" }} />
+            <div className="w-full h-full" style={{ backgroundImage: `url(${localBackgroundUrl(images[3])})`, backgroundSize: "cover", backgroundPosition: "center" }} />
           </div>
           <div>
             <p className="section-label mb-6 gsap-reveal text-gold">Heritage</p>

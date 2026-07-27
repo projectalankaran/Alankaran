@@ -3,16 +3,14 @@ import SEO from "@/components/SEO";
 import StructuredData from "@/components/StructuredData";
 import Footer from "@/components/Footer";
 import HeroSection from "@/components/home/HeroSection";
-import { useSiteContent } from "@/providers/SiteContentProvider";
-import { heroImageUrl } from "@/utils/cloudinaryImage";
 
 // We use an IntersectionObserver wrapper (LazySection) later, but for now we just lazy load it
 const HomeBelowFold = memo(lazy(() => import("@/components/home/HomeBelowFold")));
 
 export default function Home() {
-  const { getSlotImage } = useSiteContent();
-  // Same transform the hero <img> uses, so the preload and the render request the identical URL.
-  const heroMainImage = heroImageUrl(getSlotImage("hero", "hero_main", "/images/hero-mandap.webp").url);
+  // The hero image is resolved inside <HeroSection>; Home no longer duplicates that lookup just to
+  // feed a preload prop. The LCP preload is synthesised at build time from the rendered markup
+  // (see scripts/prerender.mjs), which is the only way to guarantee it matches the actual request.
   const [pulseHighlight, setPulseHighlight] = useState(false);
 
   useEffect(() => {
@@ -31,7 +29,6 @@ export default function Home() {
         title="Hyderabad Luxury Wedding Planner & Nizami Floral Design"
         description="Alankaran is Hyderabad's premier luxury wedding planning and management company, creating immersive royal celebrations inspired by Nizami heritage, romance, and modern editorial beauty."
         url="https://alankaran.com/"
-        preloadImage={heroMainImage}
       />
       <StructuredData
         data={{

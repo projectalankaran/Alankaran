@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite --config vite.config.ts --host 0.0.0.0",
-    "build": "vite build --outDir dist/static && vite build --ssr src/entry-server.tsx --outDir dist/server && node scripts/prerender.mjs",
+    "build": "npm run generate-images && vite build --outDir dist/static && vite build --ssr src/entry-server.tsx --outDir dist/server && node scripts/prerender.mjs",
+    "generate-images": "node scripts/generate-responsive-images.mjs",
+    "generate-images:force": "node scripts/generate-responsive-images.mjs --force",
     "serve": "vite preview --config vite.config.ts --host 0.0.0.0",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "test": "vitest run",

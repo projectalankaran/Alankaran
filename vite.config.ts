@@ -25,14 +25,59 @@ const DEFERRED_PRELOAD_CHUNKS = [
   "firestore.service",
   "inquiry.service",
 ];
-function stripDeferredPreloads() {
+/**
+ * Orders the <head> for the critical rendering path.
+ *
+ * Rolldown emits, in this order: the entry `<script type="module">`, then every `<link
+ * rel="modulepreload">`, and only then the `<link rel="stylesheet">`. For a client-rendered app that
+ * ordering is reasonable — JS *is* the critical path. For this app it is actively wrong, because
+ * every public route ships fully prerendered HTML (`scripts/prerender.mjs`): first paint needs the
+ * stylesheet and nothing else, and the JS is only required later, to hydrate.
+ *
+ * Measured on the previous build, that inversion put ~145 KB gzip of module preloads — all of them
+ * at High priority — ahead of the 25 KB stylesheet that actually gates FCP and ahead of the hero
+ * image that gates LCP. This plugin fixes both halves of the problem:
+ *
+ *   1. Deferred chunks (below) keep having their preload hints dropped entirely — they are reachable
+ *      only through `import()` and must not be fetched before the feature mounts.
+ *   2. Every surviving modulepreload is demoted with `fetchpriority="low"`. They are still
+ *      *discovered* immediately (so the module graph never serialises into a waterfall of round
+ *      trips), but the browser schedules them beneath the stylesheet and the LCP image.
+ *   3. The stylesheet is hoisted above the entry script so the render-blocking resource is both
+ *      discovered and requested first.
+ */
+function orderCriticalPath() {
   return {
-    name: "strip-deferred-modulepreloads",
+    name: "order-critical-path",
+    enforce: "post" as const,
     transformIndexHtml(html: string) {
-      return html.replace(
-        /<link[^>]*rel="modulepreload"[^>]*>/g,
-        (tag) => (DEFERRED_PRELOAD_CHUNKS.some((c) => tag.includes(`/${c}-`)) ? "" : tag)
-      );
+      // 1 + 2 — drop deferred hints, demote the rest.
+      let out = html.replace(/<link[^>]*rel="modulepreload"[^>]*>/g, (tag) => {
+        if (DEFERRED_PRELOAD_CHUNKS.some((c) => tag.includes(`/${c}-`))) return "";
+        return tag.includes("fetchpriority")
+          ? tag
+          : tag.replace(/>$/, ' fetchpriority="low">');
+      });
+
+      // 3 — hoist stylesheets above the entry module script. Pull them out, then reinsert
+      // immediately before the first module script so the parser sees CSS first.
+      const stylesheets: string[] = [];
+      out = out.replace(/[ \t]*<link[^>]*rel="stylesheet"[^>]*>\n?/g, (tag) => {
+        // Only relocate build-emitted asset stylesheets; leave the hand-authored Google Fonts
+        // <noscript> fallback in index.html exactly where it is.
+        if (!tag.includes("/assets/")) return tag;
+        stylesheets.push(tag.trim());
+        return "";
+      });
+
+      if (stylesheets.length) {
+        out = out.replace(
+          /(<script[^>]*type="module"[^>]*><\/script>)/,
+          `${stylesheets.join("\n    ")}\n    $1`
+        );
+      }
+
+      return out;
     },
   };
 }
@@ -43,7 +88,7 @@ export default defineConfig({
     react(),
     tailwindcss(),
     runtimeErrorOverlay(),
-    stripDeferredPreloads(),
+    orderCriticalPath(),
     ...(process.env.NODE_ENV !== "production" &&
     process.env.REPL_ID !== undefined
       ? [

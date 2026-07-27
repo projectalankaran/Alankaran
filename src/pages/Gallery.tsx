@@ -221,7 +221,6 @@ export default function Gallery() {
       <SEO
         title="Portfolio & Gallery"
         description="A visual anthology of Alankaran's luxury wedding design, featuring mandaps, floral styling, reception decor, and bridal entries."
-        preloadImage={heroImage}
       />
       {/* Hero */}
       <section className="relative flex h-[55vh] items-end overflow-hidden pb-20">
